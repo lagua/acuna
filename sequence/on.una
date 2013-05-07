@@ -1,0 +1,10 @@
+DEFINE
+	"Binds a word to a DOM node"
+	"defer: creates a deferred function for each arg, prepending each item on the stack"
+	"apply: applies the functions to each item on the stack with the args [widget,eventType,deferred]"
+
+USE "acuna/kernel/array"
+USE "dojo/on" "on"
+
+defer apply
+	on
