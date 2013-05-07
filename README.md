@@ -1,4 +1,4 @@
-acuna
+Acuna
 =====
 Acuna is a language for the web. It is an attempt to unify HTML, XML, JSON, javascript and CSS in a single syntax, and to provide a common practice. The name can be read as an acronym: "A concatenative unified notation attempt". The notation itself is simply called Una, which also serves as the extension for Acuna files. In Una there are no commas or brackets. Strings are quoted and integers are interpreted as is. Arrays are simply lists of strings and/or integers. Nesting is achieved by using line breaks and indentation (whitespace is interpreted!). View a [sample file](tests/test.una).
 
