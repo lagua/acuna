@@ -6,6 +6,4 @@ First and foremost, Una represents data, but there is more. Acuna is a programmi
 
 Acuna is inspired by concatenative programming: functions are applied on a stack, and there are no temporary variables or anonymous functions. Modules can be written in Una, but they can also just be written in javascript, or any language that will parse to javascript, as long as it returns a function that will take the following arguments: *stack*, *args* & *context*, and return a stack. The context is provided to keep track of anything beyond the stack (i.e. metadata).
 
-The concept of Acuna is very much related to jQuery's function chaining. You query the DOM, and run the result through a series of functions in order to process it. When the DOM is queried, Acuna associates the it with a light-weight JavaScript "widget" object, that can be used to address additional functionality and data, without touching the presentation proper.
-
 For more info on Acuna visit http://wshager.blogspot.nl/
