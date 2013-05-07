@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+
+	<title>Acuna JS module test</title>
+<!--[if lt IE 9]>
+<script src="/js_shared/html5shiv.js"></script>
+<![endif]-->
+	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+	<script type="text/javascript">
+		require([
+			"acuna/kernel/parser","acuna/tests/test", "dojo/json", "dojo/dom-construct", "dojo/ready"
+		], function(parser,test, JSON, domConstruct,ready){
+			var context = test();
+			console.log(context);
+			parser.load("test.una",function(context){
+				parser.toJS(context,function(js){;
+					domConstruct.create("div",{
+						innerHTML:"<pre>"+js+"</pre>"
+					},document.body);
+					eval(js)
+				},{
+					useContextData:true,
+					module:true
+				});
+			},true);
+		});
+
+	</script>
+</head>
+<body class="claro">
+		<div id="app">Click me!</div>
+		<p>
+			<a href="test.una">test.una</a>
+		</p>
+		<h3>The JavaScript equivalent</h3>
+</body>
+</html>

@@ -1,0 +1,40 @@
+DEFINE
+	"This is a test"
+	"more comments"
+
+DEFINE "data"
+	"testdata"
+	person
+		firstname "Wouter"
+		lastname "Hager"
+
+DEFINE "mylist"
+	"a list of numbers and strings"
+	"lucky" "number" 7
+
+DEFINE "mynolist"
+	"a multilevel list of numbers"
+	1 2 3
+		4 5 6
+		7 8 9
+	0
+
+DEFINE "myfavoritecolor"
+	"My favorite color..."
+	"red"
+
+USE "acuna/query" "query"
+USE "acuna/dictionary" "dictionary"
+USE "acuna/sequence" dictionary "acuna/dictionaries/short"
+USE "acuna/filter"
+USE "acuna/style" "style"
+
+query "#app" filter
+	and
+		eq "id" "app"
+style
+	"color" "blue"
+
+query "#app" on
+	"click" style
+		"color" myfavoritecolor
