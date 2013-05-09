@@ -164,7 +164,7 @@ define([
 			return context;
 		},
 		getModules:function(context){
-			var use = [], modules = {_preload:[]};
+			var use = [], modules = {};
 			array.forEach(context.USE,function(u) {
 				use = use.concat(u);
 			});
@@ -174,21 +174,26 @@ define([
 					if(modules[k].word==word) return k;
 				}
 			};
+			var i = 0;
 			array.forEach(use,function(u) {
+				var m;
 				if(u.word!="USE") {
-					var m = getModuleByWord(u.word);
-					modules._preload.push({
-						word:u.word,
-						args:u.args,
-						module:m,
-						target:lastuse
-					});
+					m = getModuleByWord(u.word);
+					if(modules[m]){
+						modules[m].targets[lastuse.args[0]] = {
+							args:u.args
+						};
+					}
 				} else {
-					modules[u.args[0]] = {
+					m = u.args[0];
+					modules[m] = {
 						word:u.args[1],
-						module:u.args[0],
+						module:m,
+						index:i,
+						targets:{},
 						context:[]
 					};
+					i++;
 					lastuse = u;
 				}
 			});
@@ -196,26 +201,25 @@ define([
 		},
 		use:function(context,callback) {
 			var modules = parser.getModules(context);
-			var toResolve = modules._preload;
-			delete modules._preload;
 			var reqs = [];
-			for(var i=0;i<toResolve.length;i++) {
-				reqs.push(toResolve[i].module);
+			for(var m in modules) {
+				if(m.targets.length) reqs.push(m);
 			}
 			// pre-require reqs
 			require(reqs,function(){
 				var m;
 				// replace targets
 				for(var i=0;i<arguments.length;i++) {
-					var r = toResolve[i];
-					m = r.target.args[0];
-					modules[m].context.push({
-						f:arguments[i],
-						args:r.args
-					});
+					var r = modules[reqs[i]];
+					for(m in r.targets) {
+						modules[m].context.push({
+							f:arguments[i],
+							args:r.targets[m].args
+						});
+					}
 				}
 				reqs = [];
-				toResolve = [];
+				var toResolve = [];
 				for(m in modules) {
 					toResolve.push({
 						module:m
@@ -283,17 +287,12 @@ define([
 		},
 		parseArgsToString:function(w,context,useContextData) {
 			var args = [];
-			for(var i=0;i<w.args.length;i++) {
-				var a = w.args[i];
+			var checkWord = function(a){
 				if(typeof a == "object" && a instanceof Word) {
 					if(context.data[a.word]) {
 						var len = args.length;
 						if(useContextData) {
-							if(len && args[len-1] instanceof Array) {
-								args[len-1].push("context.data."+a.word);
-							} else {
-								args.push("context.data."+a.word);
-							}
+							return "context.data."+a.word;
 						} else {
 							var data = parser.parseData(context.data[a.word], true);
 							if(len && args[len-1] instanceof Array) {
@@ -303,11 +302,19 @@ define([
 							}
 						}
 					} else {
-						args.push([a.word,parser.parseArgsToString(a,context,useContextData)]);
+						return ["words['"+a.word+"']",parser.parseArgsToString(a,context,useContextData)];
 					}
 				} else {
-					args.push(a);
+					if(typeof a == "object" && a instanceof Array) {
+						for(var i=0;i<a.length;i++) {
+							a[i] = checkWord(a[i]);
+						}
+					}
+					return a;
 				}
+			}
+			for(var i=0;i<w.args.length;i++) {
+				args.push(checkWord(w.args[i]));
 			}
 			return args;
 		},
@@ -381,8 +388,6 @@ define([
 			options = options || {};
 			var context = parser.define(context);
 			var modules = parser.getModules(context);
-			var toResolve = modules._preload;
-			delete modules._preload;
 			var reqs = [];
 			var words = [];
 			var vocabs = {};
@@ -407,46 +412,62 @@ define([
 				}
 			}
 			for(m in modules) {
-				var w = modules[m].word;
-				if(!w) {
+				if(!modules[m].word) {
 					vocabs.push(m);
-					w = "_"+m.split(/\//g).pop();
 				}
-				words.push(w);
 				reqs.push('"'+m+'"');
+			}
+			var jscontext = {
+				path:context.path,
+				file:context.file,
+				word:context.word,
+				ext:context.ext,
+				data:data
+			};
+			var getResolved = function(t){
+				for(var m in modules) {
+					if(modules[m].targets[t]) return modules[m];
+				}
 			}
 			requireVocabs(vocabs,function(vocabs){
 				var str = options.module ? "define" : "require";
-				str += "([\n"+reqs.join(",\n")+"\n],function("+words.join(",")+"){\n\n";
-				if(options.module) str += "return function(stack,args,remotecontext){\n";
-				array.forEach(toResolve,function(s){
-					var v =  "_"+s.target.args[0].split(/\//g).pop();
-					str += v+" = "+s.word+"("+v+",[\""+s.args.join("\",\"")+"\"]);\n";
-				})
-				for(var m in vocabs) {
-					var v = m.split(/\//g).pop();
-					for(var i=0;i<vocabs[m].length;i++) {
-						var w = vocabs[m][i];
-						str += "var "+w+" = _"+v+"."+w+";\n";
+				str += "([\n"+reqs.join(",\n")+"\n],function(){\n\n";
+				var resolvedWords = [];
+				for(m in modules) {
+					var i = modules[m].index;
+					var w = modules[m].word;
+					if(w) {
+						resolvedWords.push("'"+w+"':arguments["+i+"]");
+					} else {
+						var r = getResolved(m);
+						var ri = r ? r.index : 0;
+						var rargs = r ? r.targets[m].args : null;
+						array.forEach(vocabs[m],function(w){
+							var s = "'"+w+"':"
+							if(r) s += "arguments["+ri+"]("
+							s += "arguments["+i+"]";
+							if(r) s += rargs ? ","+JSON.stringify(rargs)+")" : ")";
+							s += "['"+w+"']";
+							resolvedWords.push(s);
+						});
 					}
+					//var v =  s.target.args[0].split(/\//g).pop();
+					//str += "\""+v+"\":"+s.word+"("+v+",[\""+s.args.join("\",\"")+"\"]);\n";
 				}
-				var jscontext = {
-					path:context.path,
-					file:context.file,
-					word:context.word,
-					ext:context.ext,
-					data:data
-				};
-				str += "var stack = [];\n";
+				str += "var words = {\n"+resolvedWords.join(",\n")+"\n};\n\n";
+				if(options.module) str += "return function(stack,args,remotecontext){\n";
 				str += "var context = "+JSON.stringify(jscontext,undefined,2)+";\n";
+				str += "var stack = [];\n";
+				
 				array.forEach(context.words,function(block,index) {
 					array.forEach(block,function(w) {
+						stripSingles(w,context);
 						var args = parser.parseArgsToString(w,context,options.useContextData);
 						args = JSON.stringify(args);
 						args = args.replace(/\\"/g,"@@");
 						args = args.replace(/"/g,"").replace(/@@/g,'"');
 						var f = w.word;
-						str += "stack = "+f+"(stack,"+args+",context);\n";
+						str += "stack = words['"+f+"'](stack,"+args+",context);\n";
 					});
 					str += "context.stack = stack;\n";
 				});
