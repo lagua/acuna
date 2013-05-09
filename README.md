@@ -7,3 +7,9 @@ First and foremost, Una represents data, but there is more. Acuna is a programmi
 Acuna is inspired by concatenative programming: functions are applied on a stack, and there are no temporary variables or anonymous functions. Modules can be written in Una, but they can also just be written in javascript, or any language that will parse to javascript, as long as it returns a function that will take the following arguments: *stack*, *args* & *context*, and returns a stack in turn. The context is provided to keep track of anything beyond the stack.
 
 For more info on Acuna visit http://wshager.blogspot.nl/
+
+Installing
+----------
+
+Acuna requires Dojo Toolkit. Download it at http://dojotoolkit.org/
+Just clone acuna into the dojo folder and run the tests.
