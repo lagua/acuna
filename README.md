@@ -11,5 +11,4 @@ For more info on Acuna visit http://wshager.blogspot.nl/
 Installing
 ----------
 
-Acuna requires Dojo Toolkit. Download it at http://dojotoolkit.org/
-Just clone acuna into the dojo folder and run the tests.
+Acuna requires Dojo Toolkit. Download it at http://dojotoolkit.org/ and clone acuna into the dojo folder to run the tests.
