@@ -4,16 +4,20 @@ define([
 "acuna/sequence",
 "acuna/filter",
 "acuna/style"
-],function(query,dictionary,_sequence,_filter,style){
+],function(){
 
-return function(){
-_sequence = dictionary(_sequence,["acuna/dictionaries/short"]);
-var each = _sequence.each;
-var filter = _sequence.filter;
-var mixin = _sequence.mixin;
-var on = _sequence.on;
-var and = _filter.and;
-var eq = _filter.eq;
+var words = {
+'query':arguments[0],
+'dictionary':arguments[1],
+'filter':arguments[1](arguments[2],["acuna/dictionaries/short"])['filter'],
+'mixin':arguments[1](arguments[2],["acuna/dictionaries/short"])['mixin'],
+'on':arguments[1](arguments[2],["acuna/dictionaries/short"])['on'],
+'and':arguments[3]['and'],
+'eq':arguments[3]['eq'],
+'style':arguments[4]
+};
+
+return function(stack,args,remotecontext){
 var context = {
   "path": "test.una",
   "file": "test.una",
@@ -49,18 +53,18 @@ var context = {
       ],
       0
     ],
-    "myfavoritecolor": [
-      "red"
-    ]
+    "myfavoritecolor": "red"
   }
 };
-var result = [];
-result[0] = query(result[0],["#app"],context);
-result[0] = filter(result[0],[[and,[[eq,["id","app"]]]]],context);
-result[0] = style(result[0],[["color","blue"]],context);
-result[1] = query(result[1],["#app"],context);
-result[1] = on(result[1],[["click"],[style,[["color",context.data.myfavoritecolor]]]],context);
-context.result = result;
-return context;
+var stack = [];
+stack = words['query'](stack,["#app"],context);
+stack = words['filter'](stack,[[words['and'],[[words['eq'],["id","app"]]]]],context);
+stack = words['style'](stack,[["color","blue"]],context);
+context.stack = stack;
+stack = words['query'](stack,["#app"],context);
+stack = words['on'](stack,["click",[words['style'],[["color",context.data.myfavoritecolor]]]],context);
+context.stack = stack;
+return stack;
 };
+
 });
