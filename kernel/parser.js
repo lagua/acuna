@@ -203,7 +203,7 @@ define([
 			var modules = parser.getModules(context);
 			var reqs = [];
 			for(var m in modules) {
-				if(m.targets.length) reqs.push(m);
+				if(modules[m].targets.length>0) reqs.push(m);
 			}
 			// pre-require reqs
 			require(reqs,function(){
