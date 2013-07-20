@@ -1,0 +1,12 @@
+DEFINE
+	"This is a test"
+
+USE "acuna/markup/html" "html"
+USE "acuna/style" "style"
+
+html
+	p
+		a
+			@id "test"
+			@href "http://test.nl"
+			#text "test2"
