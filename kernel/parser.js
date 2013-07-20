@@ -270,6 +270,9 @@ define([
 						return [context.resolvedWords[a.word],parser.parseArgs(a,context)];
 					} else if(context.data[a.word]) {
 						return parser.parseData(context.data[a.word], true);
+					} else {
+						// it's just an object
+						return parser.parseData(a);
 					}
 				} else {
 					if(typeof a == "object" && a instanceof Array) {
