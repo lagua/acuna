@@ -18,8 +18,9 @@ define([
 	}
 	
 	acuna.style = function(list,args,context){
+		if(!args.length) return;
 		array.forEach(list,function(item){
-			var s = arrayToObject(args);
+			var s = args[0] instanceof Array ? arrayToObject(args) : args[0];
 			domStyle.set(item.domNode,s);
 		});
 		return list;
