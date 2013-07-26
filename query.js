@@ -5,7 +5,7 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/selector/_loader!default", 
 
 	var acuna = lang.getObject("acuna", true);
 	
-	var query = function(context,args) {
+	var query = function(stack,args,context) {
 		var q = args[0];
 		var nodelist = defaultEngine(q);
 		var widgetlist = [];
@@ -19,6 +19,7 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/selector/_loader!default", 
 			}
 			widgetlist.push(widget);
 		});
+		//stack.push(widgetlist);
 		return widgetlist;
 	};
 	
