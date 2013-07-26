@@ -10,10 +10,12 @@ define([
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 	
-	var Word = function(word,depth,args){
+	var Word = function(word,depth,line,args){
 		this.word = word;
 		this.depth = depth;
+		this.line = line;
 		this.args = args;
+		this.parent = null;
 	};
 	
 	var stripSingles = function(w,context) {
@@ -38,25 +40,11 @@ define([
 	};
 	
 	var parser = {
-		parse:function(s,path,preserveData){
+		parse:function(context,s,path,preserveData,useWord){
 			var file = path.substring(path.lastIndexOf("/")+1);
 			var ar = file.split(/\./g);
 			var ext = ar.pop();
-			var word = ar.join(".");
-			var context = {
-				path:path,
-				file:file,
-				word:word,
-				ext:ext,
-				DEFINE:[],
-				USE:[],
-				modules:{},
-				resolvedWords:{},
-				result:[],
-				words:[],
-				data:{},
-				datablocks:{}
-			};
+			//var word = ar.join(".");
 			s.split(/(?:\r\n){2,}?/g).forEach(function(b){
 				var first = b.match(/^\S+/);
 				var target = (first[0]=="DEFINE" || first[0]=="USE") ? first[0] : "words";
@@ -69,10 +57,15 @@ define([
 					var ar = b.split(/\r\n/);
 					var l = ar.shift();
 					var parts = l.match(/[^"\s]+|"(.*?)"/g);
-					if(parts[1])
-					context.datablocks[parts[1].replace(/"/g,"")] = ar.join("\n");
+					if(parts[1]) context.datablocks[parts[1].replace(/"/g,"")] = ar.join("\n");
 				}
-				b.split(/\r\n/).forEach(function(l){
+				if(useWord) {
+					context.datablocks[useWord] = b;
+					word = new Word(useWord,0,0,[]);
+					parent = word;
+					words.push(word);
+				}
+				b.split(/\r\n/).forEach(function(l,line){
 					// capture nesting
 					var tmatch = l.match(/^\t+/g);
 					var tabs = tmatch && tmatch.length>0 ? tmatch[0] : null;
@@ -86,20 +79,45 @@ define([
 						return p.indexOf("\"")>-1 || isNumeric(p);
 					});
 					*/
+					var findParent = function(parent){
+						var i;
+						if(parent.depth>depth || !parent.args || !parent.args.length) return;
+						for(i=0;i<parent.args.length;i++) {
+							if(parent.args[i].depth==depth) return parent;
+						}
+						for(i=0;i<parent.args.length;i++) {
+							return findParent(parent.args[i]);
+						}
+					};
+					var findParent2 = function(parent){
+						var i;
+						if(parent.depth==depth-1) return parent;
+						return findParent2(parent.parent);
+					};
 					array.forEach(parts,function(p,index){
 						if(p.indexOf("\"")==-1 && !isNumeric(p)) {
-							word = new Word(p,depth,[]);
+							word = new Word(p,depth,line,[]);
 							var leftword = parts[index-1] ? parts[index-1] : null;
 							leftword = leftword && leftword.indexOf("\"")==-1 && !isNumeric(leftword);
 							if(!leftword && endword && depth>curdepth) {
 								parent = endword;
 								parent.args.push(word);
 							} else if(parent && depth>0) {
-								parent.args.push(word);
+								if(parent.depth>depth) {
+									// find ancestor with correct depth
+									parent = findParent(words[words.length-1]);
+									parent.args.push(word);
+								} else if(parent.depth==depth) {
+									parent = findParent2(parent);
+									parent.args.push(word);
+								} else {
+									parent.args.push(word);
+								}
 							} else {
 								parent = word;
 								words.push(word);
 							}
+							word.parent = parent;
 							if(index==0 && endword) endword = false;
 							if(p=="DEFINE" || index==parts.length-1) {
 								endword = word;
@@ -116,12 +134,16 @@ define([
 										ar.push([]);
 										len = 1;
 									}
-									ar = ar[len-1];
+									ar = len>1 ? ar[len-1] : ar;
 								}
 								ar.push(val);
 							} 
 							if(!endword) {
-								word.args.push(val);
+								if(line>word.line && word.depth==depth) {
+									word.parent.args.push(val);
+								} else {
+									word.args.push(val);
+								}
 							} else {
 								var wlen = word.args.length;
 								if(depth<2 || !wlen) {
@@ -133,6 +155,8 @@ define([
 										if(index==0) word.args.push([]);
 										wlen = word.args.length;
 										word.args[wlen-1].push(val);
+										// FIXME: dirty hack to set parent when it gets lost because first val is text
+										parent = word;
 									}
 								} else {
 									if(index==0) word.args[wlen-1].push([]);
@@ -186,9 +210,12 @@ define([
 					}
 				} else {
 					m = u.args[0];
+					var ext = m.split("\.").pop();
+					if(ext=="una") m = "dojo/text!" + m;
 					modules[m] = {
 						word:u.args[1],
 						module:m,
+						ext:ext,
 						index:i,
 						targets:{},
 						context:[]
@@ -230,6 +257,10 @@ define([
 					for(var i=0;i<arguments.length;i++) {
 						m = modules[toResolve[i].module];
 						var a = arguments[i];
+						if(m.ext=="una") {
+							context = parser.parse(context,a,m.module,false,m.word);
+							a = context.words[context.words.length-1][0].args;
+						}
 						// vocabulary!
 						if(typeof a != "function" && !m.word) {
 							array.forEach(m.context,function(item){
@@ -238,8 +269,10 @@ define([
 								}
 							});
 							lang.mixin(context.resolvedWords,a);
-						} else {
+						} else if(typeof a == "function") {
 							context.resolvedWords[m.word] = a;
+						} else {
+							context.data[m.word] = a;
 						}
 						modules[toResolve[i].module] = a;
 					}
@@ -251,11 +284,40 @@ define([
 		parseData:function(w,root) {
 			if(typeof w == "object" && w instanceof Word) {
 				var obj = {};
+				var mixed = false;
 				obj[w.word] = {};
+				var keys = [];
+				// TODO use array for mixed content, object for anything else
 				for(var i=0;i<w.args.length;i++) {
 					var a = w.args[i];
+					
+					var key = a.word;
+					mixed = mixed || keys.indexOf(key)>-1;
+					
 					var res = parser.parseData(a);
-					obj[w.word] = res instanceof Object ? lang.mixin(obj[w.word],res) : res;
+					
+					mixed = mixed || (typeof res != "object" && w.args.length > 1);
+					
+					keys.push(key);
+					
+					if(mixed) {
+						if(!(obj[w.word] instanceof Array)) {
+							if(typeof obj[w.word] != "object") {
+								obj[w.word] = [obj[w.word]];
+							} else {
+								var o = lang.clone(obj[w.word]);
+								obj[w.word] = [];
+								for(var k in o) {
+									var newo = {};
+									newo[k] = o[k];
+									obj[w.word].push(newo);
+								}
+							}
+						}
+						obj[w.word].push(res);
+					} else {
+						obj[w.word] = res instanceof Object ? lang.mixin(obj[w.word],res) : res;
+					}
 				}
 				return root ? [obj] : obj;
 			} else {
@@ -483,15 +545,42 @@ define([
 			});
 		},
 		load:function(file,callback,preserveData){
+			var context = {
+				path:"",
+				file:"",
+				word:"",
+				ext:"",
+				DEFINE:[],
+				USE:[],
+				modules:{},
+				resolvedWords:{},
+				result:[],
+				words:[],
+				data:{},
+				datablocks:{}
+			};
 			request.get(file).then(function(result){
-				var context = parser.parse(result,file,preserveData);
+				var context = parser.parse(context,result,file,preserveData);
 				if(callback) callback(context);
 			});
 		},
 		execute:function(file,callback){
-			var context = {};
+			var context = {
+				path:"",
+				file:"",
+				word:"",
+				ext:"",
+				DEFINE:[],
+				USE:[],
+				modules:{},
+				resolvedWords:{},
+				result:[],
+				words:[],
+				data:{},
+				datablocks:{}
+			};
 			request.get(file).then(function(result){
-				var context = parser.parse(result,file);
+				context = parser.parse(context,result,file);
 				context = parser.define(context);
 				context = parser.use(context,function(context){
 					stack = parser.words(context);
