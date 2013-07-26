@@ -1,12 +1,30 @@
 DEFINE
 	"This is a test"
 
+DEFINE "macro"
+	"this is a macro"	
+	query "#test"
+		style
+			color "green"
+	
+	query "#test" on
+		"click" style
+			color "red"
+
 USE "acuna/markup/html" "html"
+USE "acuna/query" "query"
 USE "acuna/style" "style"
+USE "acuna/sequence/on" "on"
 
 html
 	p
 		a
-			@id "test"
-			@href "http://test.nl"
-			#text "test2"
+			@href "http://lagua.nl"
+			"test2"
+	div
+		@id "test"
+		"click "
+		b "on "
+		"me"
+
+macro
