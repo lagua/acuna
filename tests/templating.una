@@ -1,0 +1,8 @@
+DEFINE
+    "Templating"
+
+USE "./mydata.una" "mydata"
+USE "acuna/template/unordered-list" "ul"
+
+ul
+	mydata
