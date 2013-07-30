@@ -17,10 +17,11 @@
 				console.log(context);
 				for(var k in context.data) {
 					domConstruct.create("div",{
-						innerHTML:"<pre>\n\n<b>Una data:</b>\n\n"+context.datablocks[k]+"\n\n</pre>"
+						innerHTML:"<pre>\n\n<b>Una data:</b>\n\n"+context.blocks[k]+"\n\n</pre>"
 					},document.body);
+					var pd = parser.parseData(context.data[k],true);
 					domConstruct.create("div",{
-						innerHTML:"<pre><b>JSON:</b>\n\n"+JSON.stringify(parser.parseData(context.data[k],true),undefined, 3)+"</pre>"
+						innerHTML:"<pre><b>JSON:</b>\n\n"+JSON.stringify(pd,undefined, 3)+"</pre>"
 					},document.body);
 				}
 			});

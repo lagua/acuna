@@ -2,14 +2,12 @@ DEFINE
 	"This is a test"
 
 USE "acuna/markup/html" "html"
-USE "acuna/query" "query"
-USE "acuna/style" "style"
-USE "acuna/sequence/on" "on"
 
 html
 	p
 		a
-			@href "http://lagua.nl"
+			@href "./exec.una"
+			@target "blank"
 			"test2"
 	div
 		@id "test"
@@ -17,9 +15,18 @@ html
 		b "on "
 		"me"
 
-query "#test"
-	style
-		color "green"
+module
+
+
+DEFINE module
+	"test module"
+
+USE "acuna/query" "query"
+USE "acuna/style" "style"
+USE "acuna/sequence/on" "on"
+
+query "#test" style
+	color "green"
 
 query "#test" on
 	"click" style
