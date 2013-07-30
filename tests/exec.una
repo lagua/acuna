@@ -1,16 +1,6 @@
 DEFINE
 	"This is a test"
 
-DEFINE "macro"
-	"this is a macro"	
-	query "#test"
-		style
-			color "green"
-	
-	query "#test" on
-		"click" style
-			color "red"
-
 USE "acuna/markup/html" "html"
 USE "acuna/query" "query"
 USE "acuna/style" "style"
@@ -27,4 +17,10 @@ html
 		b "on "
 		"me"
 
-macro
+query "#test"
+	style
+		color "green"
+
+query "#test" on
+	"click" style
+		color "red"
