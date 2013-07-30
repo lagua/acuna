@@ -14,7 +14,7 @@ define(["dojo/_base/lang", "dojo/dom-construct"],
 				ar.push(traverse(name,_,parent));
 			});
 			ar.forEach(function(_,i){
-				if(i>0) domConstruct.place(ar[i].firstChild,ar[0]);
+				if(i>0 && ar[i].firstChild) domConstruct.place(ar[i].firstChild,ar[0]);
 			});
 			return ar[0];
 		}
