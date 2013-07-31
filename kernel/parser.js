@@ -51,10 +51,10 @@ define([
 			var useWord;
 			defblocks.reverse();
 			defblocks.forEach(function(defblock){
+				var parent,word;
 				// search each block in una string
 				defblock.split(/(?:\r\n){2,}?/g).forEach(function(block,blockno){
 					var words = [];
-					var parent,word;
 					var first = block.match(/^\S+/);
 					// DEFINE should only happen once per block
 					// in other words: each block MUST start with DEFINE
@@ -72,7 +72,7 @@ define([
 							useWord = parts[1].replace(/"/g,"");
 						} else {
 							useWord = defWord;
-							context.exec = defWord;
+							if(!context.exec) context.exec = defWord;
 						}
 						// if useWord exists the string is loaded from an external file
 						if(useWord) {
