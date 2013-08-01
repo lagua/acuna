@@ -8,16 +8,24 @@ define([
 ],function(lang,array,request,Deferred,all,JSON) {
 	lang.getObject("acuna.kernel",true);
 	
+	Object.size = function(obj) {
+	    var size = 0, key;
+	    for (key in obj) {
+	        if (obj.hasOwnProperty(key)) size++;
+	    }
+	    return size;
+	};
+
 	var isNumeric = function(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 	
-	var Word = function(word,depth,line,args){
+	var Word = function(word,depth,line,block,args){
 		this.word = word;
 		this.depth = depth;
 		this.line = line;
+		this.block = block;
 		this.args = args;
-		this.parent = null;
 	};
 	
 	var stripSingles = function(w,context) {
@@ -41,20 +49,29 @@ define([
 		}
 	};
 	
+	var inUse = function(def,word){
+		for(var i=0;i<def.USE.length;i++){
+			if(def.USE[i].args[1]==word) return true;
+		}
+	};
+	
 	var parser = {
 		parse:function(context,string,path,preserveData){
+			string = string.replace(/\r\n/g,"\n");
+			string = string.replace(/ {4,}/g,"\t");
 			var file = path.substring(path.lastIndexOf("/")+1);
 			var ar = file.split(/\./g);
 			var ext = ar.pop();
 			var defWord = ar.join(".");
-			var defblocks = string.split(/(?:\r\n){3,}?/g);
+			var defblocks = string.split(/(?:\n){3,}?/g);
 			var useWord;
 			defblocks.reverse();
 			defblocks.forEach(function(defblock){
-				var parent,word;
+				var word, def;
 				// search each block in una string
-				defblock.split(/(?:\r\n){2,}?/g).forEach(function(block,blockno){
+				defblock.split(/(?:\n){2,}?/g).forEach(function(block,blockno){
 					var words = [];
+					var parent;
 					var first = block.match(/^\S+/);
 					// DEFINE should only happen once per block
 					// in other words: each block MUST start with DEFINE
@@ -64,20 +81,20 @@ define([
 					var curdepth;
 					var endword;
 					if(target=="DEFINE" && blockno==0) {
-						var ar = block.split(/\r\n/);
+						var ar = block.split(/\n/);
 						var l = ar.shift();
 						var parts = l.match(/[^"\s]+|"(.*?)"/g);
 						block = ar.join("\n");
 						if(parts[1]) {
 							useWord = parts[1].replace(/"/g,"");
 						} else {
-							useWord = defWord;
-							if(!context.exec) context.exec = defWord;
+							useWord = defWord || "exec";
+							if(!context.exec) context.exec = useWord;
 						}
 						// if useWord exists the string is loaded from an external file
 						if(useWord) {
 							context.blocks[useWord] = defblock;
-							word = new Word(useWord,0,0,[]);
+							word = new Word(useWord,0,0,0,[]);
 							word.path = path;
 							word.exec = !parts[1];
 							word.file = file;
@@ -85,12 +102,12 @@ define([
 							word.words = [];
 							word.comments = [];
 							word.USE = [];
-							parent = word;
+							context.DEFINE[useWord] = def = parent = word;
 						}
 					}
-					
+					if(blockno>word.block) word = def;
 					// search each line
-					block.split(/\r\n/).forEach(function(line,lineno){
+					block.split(/\n/).forEach(function(line,lineno){
 						// capture nesting
 						var tmatch = line.match(/^\t+/g);
 						var tabs = tmatch && tmatch.length>0 ? tmatch[0] : null;
@@ -131,14 +148,14 @@ define([
 									console.log(p,context.resolvedWords[p])
 									word = context.resolvedWords[p];
 								} else {
-									word = new Word(p,depth,lineno,[]);
+									word = new Word(p,depth,lineno,blockno,[]);
 								}
 								var leftword = parts[index-1] ? parts[index-1] : null;
 								leftword = leftword && leftword.indexOf("\"")==-1 && !isNumeric(leftword);
 								if(!leftword && endword && depth>curdepth) {
 									parent = endword;
 									parent.args.push(word);
-								} else if(parent && depth>0) {
+								} else if(parent && depth>0 && !inUse(def,p)) {
 									if(parent.depth>depth) {
 										// find ancestor with correct depth
 										parent = findParent(words[words.length-1]);
@@ -191,7 +208,7 @@ define([
 												// should be same as depth<curdepth
 												atDepth(word.args[wlen-1],depth-1,val);
 											} else {
-												if(index==0) word.args.push([]);
+												if(index==0 || !word.args.length) word.args.push([]);
 												wlen = word.args.length;
 												word.args[wlen-1].push(val);
 												// FIXME: dirty hack to set parent when it gets lost because first val is text
@@ -207,14 +224,12 @@ define([
 						});
 						curdepth = depth;
 					});
-					if(target!="DEFINE") {
+					if(words.length && blockno>0) {
 						if(target=="USE") {
-							context.DEFINE[useWord].USE.push(words);
+							def.USE = def.USE.concat(words);
 						} else {
-							context.DEFINE[useWord].words.push(words);
+							def.words.push(words);
 						}
-					} else {
-						context.DEFINE[useWord] = word;
 					}
 				});
 			});
@@ -280,7 +295,7 @@ define([
 			var modules = parser.getModules(context);
 			var reqs = [];
 			for(var m in modules) {
-				if(modules[m].targets.length>0) reqs.push(m);
+				if(Object.size(modules[m].targets)>0) reqs.push(m);
 			}
 			// pre-require reqs
 			require(reqs,function(){
@@ -304,30 +319,51 @@ define([
 					reqs.push(m);
 				}
 				require(reqs,function(){
+					var items = [];
 					for(var i=0;i<arguments.length;i++) {
 						m = modules[toResolve[i].module];
 						var a = arguments[i];
 						if(m.ext=="una") {
-							context = parser.parse(context,a,m.module,false,m.word);
-							a = context.words[context.words.length-1][0].args;
-						}
-						// vocabulary!
-						if(typeof a != "function" && !m.word) {
-							array.forEach(m.context,function(item){
-								if(item.f) {
-									a = item.f(a,item.args);
-								}
-							});
-							lang.mixin(context.resolvedWords,a);
-						} else if(typeof a == "function") {
-							context.resolvedWords[m.word] = a;
+							context = parser.parse(context,a,m.module,false);
+							parser.define(context);
+							modules[toResolve[i].module] = context.DEFINE[m.word];
+						} else if(typeof a != "function" && !m.word) {
+							if(m.context.length) {
+								items = items.concat(array.map(m.context,function(item){
+									if(item.f) {
+										item.module = a;
+										item.index = i;
+										return item;
+									}
+								}));
+							} else {
+								lang.mixin(context.resolvedWords,a);
+							}
 						} else {
-							context.data[m.word] = a;
+							if(typeof a == "function") {
+								context.resolvedWords[m.word] = a;
+							} else {
+								context.data[m.word] = a;
+							}
+							modules[toResolve[i].module] = a;
 						}
-						modules[toResolve[i].module] = a;
 					}
 					context.modules = modules;
-					if(callback) callback(context);
+					if(items.length) {
+						all(array.map(items,function(item){
+							return item.f(item.module,item.args);
+						})).then(function(res){
+							array.forEach(res,function(a,i){
+								var m = toResolve[items[i].index].module;
+								lang.mixin(context.resolvedWords,a);
+								context.modules[m] = items[i].module;
+							});
+							console.log(context)
+							if(callback) callback(context);
+						});
+					} else {
+						if(callback) callback(context);
+					}
 				});
 			});
 		},
@@ -462,6 +498,8 @@ define([
 				if(context.DEFINE[k].words.length) {
 					context.resolvedWords[k] = function(stack,args,context,word){
 						var def = context.DEFINE[word];
+						// TODO when to clear the stack?
+						stack = def.exec && def.args.length ? def.args[0] : stack;
 						array.forEach(def.words,function(block) {
 							array.forEach(block,function(w) {
 								stripSingles(w,context);
@@ -471,7 +509,6 @@ define([
 									stack = f(stack,args,context,w.word);
 								}
 							});
-							context.stack = stack;
 						});
 						return stack;
 					}
@@ -541,10 +578,7 @@ define([
 				reqs.push('"'+m+'"');
 			}
 			var jscontext = {
-				path:context.path,
-				file:context.file,
-				word:context.word,
-				ext:context.ext,
+				stack:[],
 				data:data
 			};
 			var getResolved = function(t){
@@ -579,21 +613,33 @@ define([
 				}
 				str += "var words = {\n"+resolvedWords.join(",\n")+"\n};\n\n";
 				if(options.module) str += "return function(stack,args,remotecontext){\n";
-				str += "var context = "+JSON.stringify(jscontext,undefined,2)+";\n";
-				str += "var stack = [];\n";
-				
-				array.forEach(context.words,function(block,index) {
-					array.forEach(block,function(w) {
-						stripSingles(w,context);
-						var args = parser.parseArgsToString(w,context,options.useContextData);
-						args = JSON.stringify(args);
-						args = args.replace(/\\"/g,"@@");
-						args = args.replace(/"/g,"").replace(/@@/g,'"');
-						var f = w.word;
-						str += "stack = words['"+f+"'](stack,"+args+",context);\n";
+				str += "context = "+JSON.stringify(jscontext,undefined,2)+";\n";
+				//str += "var stack = [];\n";
+				for(var k in context.DEFINE) {
+					var def = context.DEFINE[k];
+					if(!def.words.length) continue;
+					array.forEach(def.words,function(block,index) {
+						if(!def.exec) {
+							str += "words['"+def.word+"'] = function(stack,args,context) {\n";
+						} else {
+							str += "var stack = "+JSON.stringify(def.args.length ? def.args[0] : [])+";\n";
+						}
+						array.forEach(block,function(w) {
+							stripSingles(w,context);
+							var args = parser.parseArgsToString(w,context,options.useContextData);
+							args = JSON.stringify(args);
+							args = args.replace(/\\"/g,"@@");
+							args = args.replace(/"/g,"").replace(/@@/g,'"');
+							var f = w.word;
+							str += "stack = words['"+f+"'](stack,"+args+",context);\n";
+						});
+						if(!def.exec) {
+							str += "return stack;\n};\n";
+						} else {
+							str += "context.stack = stack;\n";
+						}
 					});
-					str += "context.stack = stack;\n";
-				});
+				}
 				if(options.module) {
 					str += "return stack;\n";
 					str += "};\n";
@@ -604,46 +650,48 @@ define([
 		},
 		load:function(file,callback,preserveData){
 			var context = {
-				path:"",
-				file:"",
-				word:"",
-				ext:"",
 				DEFINE:{},
-				USE:[],
 				modules:{},
 				resolvedWords:{},
-				result:[],
-				words:[],
 				data:{},
-				blocks:{}
+				blocks:{},
+				stack:[]
 			};
 			request.get(file).then(function(result){
-				var context = parser.parse(context,result,file,preserveData);
+				context = parser.parse(context,result,file,preserveData);
 				if(callback) callback(context);
 			});
 		},
-		execute:function(file,callback){
+		execute:function(file,callback,direct,args,doc){
 			var context = {
-				path:"",
-				file:"",
-				word:"",
-				ext:"",
 				DEFINE:{},
-				USE:[],
 				modules:{},
 				resolvedWords:{},
-				result:[],
-				words:[],
 				data:{},
-				blocks:{}
+				blocks:{},
+				stack:[],
+				doc: doc || document.documentElement
 			};
-			request.get(file).then(function(result){
+			var d = new Deferred();
+			if(direct) {
+				d.resolve(file);
+			} else {
+				d = request.get(file);
+			}
+			d.then(function(result){
 				context = parser.parse(context,result,file);
 				context = parser.define(context);
 				context = parser.use(context,function(context){
 					context = parser.words(context);
-					stack = context.resolvedWords[context.exec]([],[],context,context.exec);
-					//if(callback) callback(context);
+					if(context.resolvedWords[context.exec]) {
+						stack = context.resolvedWords[context.exec]([],args || [],context,context.exec);
+					} else if(context.DEFINE[context.exec].args.length) {
+						stack = context.DEFINE[context.exec].args[0];
+					} else {
+						stack = [];
+					}
+					context.stack = stack;
+					if(callback) callback(context);
 				});
 				/*
 				var proms = [];
