@@ -7,14 +7,19 @@ USE "acuna/dictionary" "dictionary"
 USE "acuna/sequence" dictionary "acuna/dictionaries/short"
 USE "acuna/filter"
 USE "acuna/style" "style"
+USE "acuna/markup/html" "html"
+
+html
+	div
+		@id "app"
+		"click me!"
 
 query "#app" filter
 	and
 		eq "id" "app"
 style
 	"color" "blue"
-
-query "#app" on
+on
 	"click" style
 		"color" myfavoritecolor
 

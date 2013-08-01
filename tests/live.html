@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+
+	<title>Acuna test</title>
+<!--[if lt IE 9]>
+<script src="/js_shared/html5shiv.js"></script>
+<![endif]-->
+	<style>
+		body, html {
+			margin:0;
+			padding:0;
+			overflow:hidden;
+			height:100%;
+		}
+		#root {
+			display: -webkit-flex;
+  			display: flex;
+		    width:100%;
+		    height:100%;
+		}
+		#text {
+			resize:none;
+			flex:2;
+			-webkit-flex:2;
+		}
+		#col1 {
+			display: -webkit-flex;
+  			display: flex;
+  			flex-direction:column;
+  			-webkit-flex-direction:column;
+		    flex:1;
+		    -webkit-flex:1;
+		}
+		#col2 {
+			display: -webkit-flex;
+  			display: flex;
+  			flex-direction:column;
+  			-webkit-flex-direction:column;
+		    flex:1;
+		    -webkit-flex:1;
+		}
+		#stack {
+			overflow:auto;
+			flex: 1;
+			-webkit-flex:1;
+		    border: 1px inset black;
+		}
+		#context {
+			overflow:auto;
+			flex: 1;
+			-webkit-flex:1;
+			border: 1px inset black;
+		}
+		#body {
+			flex: 2;
+			-webkit-flex:2;
+		}
+		#btn {
+			background:yellow;
+			border: 1px inset black;
+		}
+		#btn > * {
+			margin:5px;
+		}
+		pre {
+		 white-space: pre-wrap;       /* css-3 */
+		 white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+		 white-space: -pre-wrap;      /* Opera 4-6 */
+		 white-space: -o-pre-wrap;    /* Opera 7 */
+		 word-wrap: break-word;       /* Internet Explorer 5.5+ */
+		}
+.string { color: green; }
+.number { color: darkorange; }
+.boolean { color: blue; }
+.null { color: magenta; }
+.key { color: red; }
+	</style>
+	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+	<script type="text/javascript">
+		function syntaxHighlight(json) {
+		    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+		        var cls = 'number';
+		        if (/^"/.test(match)) {
+		            if (/:$/.test(match)) {
+		                cls = 'key';
+		            } else {
+		                cls = 'string';
+		            }
+		        } else if (/true|false/.test(match)) {
+		            cls = 'boolean';
+		        } else if (/null/.test(match)) {
+		            cls = 'null';
+		        }
+		        return '<span class="' + cls + '">' + match + '</span>';
+		    });
+		}
+		var go,show;
+		require([
+			"acuna/kernel/parser", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
+		], function(parser, request, JSON, domConstruct,registry, ready){
+			var byId = function(id){
+				return document.getElementById(id);
+			}
+			var doc = byId("body").contentDocument;
+			doc.body.innerHTML = "Document";
+			go = function(){
+				//for(var k in registry._hash) registry.remove(k);
+				var file = byId("text").value;
+				parser.execute(file,function(context){
+					console.log(context);
+					delete context.doc;
+					var seen = [];
+					byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
+					   if (typeof val == "object") {
+					        if (seen.indexOf(val) >= 0)
+					            return
+					        seen.push(val)
+					    }
+					    return val;
+					}, 3));
+					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,undefined, 3));
+				},true,[],doc.documentElement);
+			}
+			load = function(){
+				var file = document.getElementById("file").value;
+				request.get(file).then(function(res){
+					byId("text").value = res;
+				});
+			}
+			show = function(){
+				var file = document.getElementById("file").value;
+				window.open(file);
+			}
+		});
+	</script>
+</head>
+<body class="claro">
+	<div id="root">
+		<div id="col1">
+			<textarea id="text"></textarea>
+			<div id="context"><pre id="context1">Context</pre></div>
+		</div>
+		<div id="col2">
+			<div id="btn">
+				<input id="file" value="concat.una"><button onclick="load()">Load</button><button onclick="show()">Show</button><button onclick="go()">Go</button>
+			</div>
+			<div id="stack"><pre id="stack1">Stack</pre></div>
+			<iframe id="body" frameborder="no"></iframe>
+		</div>
+	</div>
+</body>
+</html>

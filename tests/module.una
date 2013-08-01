@@ -8,7 +8,7 @@ html
 		a
 			@href "./exec.una"
 			@target "blank"
-			"test2"
+			"exec.una"
 	div
 		@id "test"
 		"click "
@@ -26,8 +26,6 @@ USE "acuna/style" "style"
 USE "acuna/sequence/on" "on"
 
 query "#test" style
-	color "green"
-
-query "#test" on
-	"click" style
-		color "red"
+	color "green" on
+		"click" style
+			color "red"

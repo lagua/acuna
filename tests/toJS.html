@@ -10,29 +10,39 @@
 <![endif]-->
 	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script type="text/javascript">
+		var go,show;
 		require([
 			"acuna/kernel/parser", "dojo/json", "dojo/dom-construct", "dojo/ready"
 		], function(parser, JSON, domConstruct,ready){
-			parser.load("test.una",function(context){
-				parser.toJS(context,function(js){;
-					domConstruct.create("div",{
-						innerHTML:"<pre>"+js+"</pre>"
-					},document.body);
-					eval(js);
-				},{
-					useContextData:true,
-					module:false
-				});
-			},true);
+			go = function(){
+				var file = document.getElementById("file").value;
+				parser.load(file,function(context){
+					parser.toJS(context,function(js){;
+						domConstruct.create("div",{
+							innerHTML:"<pre>"+js+"</pre>"
+						},document.body);
+						eval(js);
+						console.log(context)
+					},{
+						useContextData:true,
+						module:false
+					});
+				},true);
+			}
+			show = function(){
+				var file = document.getElementById("file").value;
+				window.open(file);
+			}
 		});
 
 	</script>
 </head>
 <body class="claro">
-		<div id="app">Click me!</div>
-		<p>
-			<a href="test.una">test.una</a>
-		</p>
-		<h3>The JavaScript equivalent</h3>
+	<input id="file" name="file" value="test.una"><button onclick="go()"/>Go</button><button onclick="show()"/>Show</button>
+	<div id="app">Click me!</div>
+	<p>
+		<a href="test.una">test.una</a>
+	</p>
+	<h3>The JavaScript equivalent</h3>
 </body>
 </html>
