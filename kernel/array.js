@@ -42,6 +42,7 @@ define(["dojo/_base/lang", "dojo/_base/array"],
 					arg.apply(null,_);
 				});
 			});
+			return stack;
 		},
 		defer:function(stack,args,context) {
 			var replaceArgs = function(args){
