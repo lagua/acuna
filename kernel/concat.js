@@ -34,7 +34,9 @@ define(["dojo/_base/lang","dojo/_base/array"],
 	var operators = ["+","-","*","/","%"];
 	array.forEach(operators,function(o){
 		kernel.concat[o] = function(stack,args,context) {
-			var x = eval("stack.pop()"+o+"stack.pop()");
+			var b = stack.pop();
+			var a = stack.pop();
+			var x = eval("a"+o+"b");
 			stack.push(x);
 			if(args.length) stack = stack.concat(args);
 			return stack;
