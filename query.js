@@ -6,7 +6,8 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/selector/_loader!default", 
 	var acuna = lang.getObject("acuna", true);
 	
 	var query = function(stack,args,context) {
-		var nodelist = defaultEngine(args.pop(),stack.pop());
+		stack.pop();
+		var nodelist = defaultEngine(args.shift());
 		var widgetlist = [];
 		array.forEach(nodelist,function(node){
 			var widget = registry.byNode(node);
