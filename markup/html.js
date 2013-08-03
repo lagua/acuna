@@ -83,6 +83,7 @@ define(["dojo/_base/lang", "dojo/_base/array","dojo/dom-construct"],
 		}
 		elm = domConstruct.create(name,attrs,parent);
 		for(var k in obj) {
+			if(k!="#text" && typeof obj[k] != "object") obj[k] = {"#text":obj[k]};
 			traverse(k,obj[k],elm);
 		}
 		return elm;
