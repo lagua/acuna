@@ -11,16 +11,18 @@ define([
 	
 	var arrayToObject = function(ar) {
 		var o = {};
-		array.forEach(ar,function(a){
-			o[a[0]] = a[1];
+		array.forEach(ar,function(_){
+			for(var k in _) {
+				o[k] = _[k];
+			}
 		});
 		return o;
 	}
 	
 	acuna.style = function(list,args,context){
 		if(!args.length) return;
+		var s = arrayToObject(args);
 		array.forEach(list,function(item){
-			var s = args[0] instanceof Array ? arrayToObject(args) : args[0];
 			domStyle.set(item.domNode,s);
 		});
 		return list;
