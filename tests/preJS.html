@@ -11,15 +11,14 @@
 	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script type="text/javascript">
 		require([
-			"acuna/kernel/parser","acuna/tests/test", "dojo/json", "dojo/dom-construct", "dojo/ready"
-		], function(parser,test, JSON, domConstruct,ready){
-			var context = test();
-			console.log(context);
-			parser.load("test.una",function(context){
+			"acuna/kernel/parser", "dojo/json", "dojo/dom-construct", "dojo/ready"
+		], function(parser, JSON, domConstruct,ready){
+			parser.load("acuna/dom/setStyle.una",function(context){
 				parser.toJS(context,function(js){;
 					domConstruct.create("div",{
 						innerHTML:"<pre>"+js+"</pre>"
 					},document.body);
+					console.log(context)
 				},{
 					useContextData:true,
 					module:true

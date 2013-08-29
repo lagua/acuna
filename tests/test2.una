@@ -4,10 +4,10 @@ DEFINE
 
 USE "acuna/query" "query"
 USE "acuna/dictionary" "dictionary"
-USE "acuna/sequence" dictionary "acuna/dictionaries/short"
 USE "acuna/dom/byId" "byId"
 USE "acuna/dom/setStyle" "setStyle"
 USE "acuna/markup/html" "html"
+USE "dojo/on" "don"
 USE "acuna/kernel/concat"
 
 html
@@ -30,3 +30,10 @@ byId "reset"
 on
 	"click" compose
 		byId "app" setStyle "color" "blue" pop
+
+
+DEFINE "on"
+    "event"
+
+dupdd false bridge
+    don

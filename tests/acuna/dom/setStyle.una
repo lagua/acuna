@@ -1,0 +1,11 @@
+DEFINE
+	"#args2stack=2"
+	"Set single style to DOM node"
+
+USE "acuna/kernel/concat"
+USE "acuna/kernel/concat/extended"
+USE "dojo/dom-style" "domStyle"
+
+dupdd bridge
+	domStyle.set
+pop

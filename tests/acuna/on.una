@@ -1,0 +1,10 @@
+DEFINE
+	"#args2stack=2"
+	"Attach event to DOM node"
+
+USE "acuna/kernel/concat"
+USE "acuna/kernel/concat/extended"
+USE "dojo/on" "don"
+
+dupdd false bridge
+	don
