@@ -1,0 +1,32 @@
+DEFINE
+	"This is a test"
+	"more comments"
+
+USE "acuna/query" "query"
+USE "acuna/dictionary" "dictionary"
+USE "acuna/sequence" dictionary "acuna/dictionaries/short"
+USE "acuna/dom/byId" "byId"
+USE "acuna/dom/setStyle" "setStyle"
+USE "acuna/markup/html" "html"
+USE "acuna/kernel/concat"
+
+html
+	div
+		@id "app"
+		"click me!"
+	div
+		@id "reset"
+		"reset me!"
+
+byId "app" setStyle "color" "blue"
+on
+	"click" setStyle "color" "red"
+on
+	"mouseover" setStyle "color" "green"
+on
+	"mouseout" setStyle "color" "blue"
+
+byId "reset"
+on
+	"click" compose
+		byId "app" setStyle "color" "blue" pop

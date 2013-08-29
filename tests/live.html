@@ -109,7 +109,8 @@
 			doc.body.innerHTML = "Document";
 			go = function(){
 				//for(var k in registry._hash) registry.remove(k);
-				var file = byId("text").value;
+				var file = document.getElementById("file").value;
+				var direct = byId("text").value;
 				parser.execute(file,function(context){
 					console.log(context);
 					delete context.doc;
@@ -123,7 +124,7 @@
 					    return val;
 					}, 3));
 					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,undefined, 3));
-				},true,[],doc.documentElement);
+				},direct,[],doc.documentElement);
 			}
 			load = function(){
 				var file = document.getElementById("file").value;
@@ -146,7 +147,13 @@
 		</div>
 		<div id="col2">
 			<div id="btn">
-				<input id="file" value="concat.una"><button onclick="load()">Load</button><button onclick="show()">Show</button><button onclick="go()">Go</button>
+				<input id="file" type="text" list="files" value="concat.una"><button onclick="load()">Load</button><button onclick="show()">Show</button><button onclick="go()">Go</button>
+				<datalist id="files">
+				   <option>concat.una</option>
+				   <option>test.una</option>
+				   <option>test2.una</option>
+				   <option>module.una</option>
+				</datalist>
 			</div>
 			<div id="stack"><pre id="stack1">Stack</pre></div>
 			<iframe id="body" frameborder="no"></iframe>
