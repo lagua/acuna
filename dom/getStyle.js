@@ -7,9 +7,9 @@ define([
 	
 	"use strict";
 
-	var acuna = lang.getObject("acuna", true);
+	var dom = lang.getObject("acuna.dom", true);
 	
-	acuna.getStyle = function(stack,args,context){
+	dom.getStyle = function(stack,args,context){
 		var x = stack.pop();
 		var s = args.shift();
 		var r = domStyle.get(x.domNode,s);
@@ -19,5 +19,5 @@ define([
 		return stack;
 	}
 	
-	return acuna.getStyle;
+	return dom.getStyle;
 });
