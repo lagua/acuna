@@ -8,7 +8,7 @@ define(["dojo/_base/lang", "dojo/_base/array"],
 	var and = function(item,args,context) {
 		// args is array of functions and args
 		var result = array.every(args,function(a){
-			return a[0](item,a[1],context);
+			return a(item,a[1],context);
 		});
 		console.log(result);
 		return result;

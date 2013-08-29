@@ -7,13 +7,16 @@ define(["dojo/_base/lang", "dojo/_base/array"],
 	
 	// list1 f filter
 	// apply f to list
-	var filter = function(list,args,context) {
-		return array.filter(list,function(item){
+	var filter = function(stack,args,context) {
+		var list = stack.pop();
+		list = array.filter(list,function(item){
 			// args is array of functions
 			return array.every(args,function(a){
-				return a[0](item,a[1],context);
+				return a(item,a[1],context);
 			});
 		});
+		stack.push(list);
+		return stack;
 	};
 	
 	seq.filter = filter;
