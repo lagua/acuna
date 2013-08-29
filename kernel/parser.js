@@ -141,10 +141,12 @@ define([
 							return findParent2(parent.parent);
 						};
 						// search line parts
+						var last = parts.pop();
+						parts.push(last);
 						array.forEach(parts,function(p,index){
 							// check if it is a number or string
 							if(p.indexOf("\"")==-1 && !isNumeric(p)) {
-								if(p != "USE" && context.resolvedWords[p]) {
+								if(p!="USE" && context.resolvedWords[p]) {
 									console.log(p,context.resolvedWords[p])
 									word = context.resolvedWords[p];
 								} else {
@@ -152,8 +154,8 @@ define([
 								}
 								var leftword = parts[index-1] ? parts[index-1] : null;
 								leftword = leftword && leftword.indexOf("\"")==-1 && !isNumeric(leftword);
-								if(!leftword && endword && depth>curdepth) {
-									parent = endword;
+								if(!leftword && parent && depth>curdepth) {
+									//parent = endword;
 									parent.args.push(word);
 								} else if(parent && depth>0 && !inUse(def,p)) {
 									if(parent.depth>depth) {
@@ -171,9 +173,9 @@ define([
 									words.push(word);
 								}
 								if(p!="USE" && parent!=word) word.parent = parent;
-								if(index==0 && endword) endword = false;
+								//if(index==0 && endword) endword = false;
 								if(index==parts.length-1) {
-									endword = word;
+									parent = word;
 								}
 							} else {
 								// consider new lines
@@ -208,9 +210,13 @@ define([
 												// should be same as depth<curdepth
 												atDepth(word.args[wlen-1],depth-1,val);
 											} else {
-												if(index==0 || !word.args.length) word.args.push([]);
-												wlen = word.args.length;
-												word.args[wlen-1].push(val);
+												if(index>0 && (!word.args.length || !(word.args[0] instanceof Array))) {
+													word.args.push(val);1
+												} else {
+													if(index==0 || !word.args.length) word.args.push([]);
+													wlen = word.args.length;
+													word.args[wlen-1].push(val);
+												}
 												// FIXME: dirty hack to set parent when it gets lost because first val is text
 												parent = word;
 											}
@@ -240,8 +246,8 @@ define([
 				var def = context.DEFINE[k];
 				if(!def.USE.length) {
 					if(def.words.length && !def.args.length) {
-						context.data[k] = def.words[0];
-						context.data[k].words = [];
+						// treat like args and parse
+						context.data[k] = parser.parseData(new Word(k,0,0,0,def.words[0]))[k];
 					} else {
 						context.data[k] = def.args;
 					}
@@ -415,7 +421,11 @@ define([
 			var checkWord = function(a) {
 				if(typeof a == "object" && a instanceof Word) {
 					if(context.resolvedWords[a.word]) {
-						return [context.resolvedWords[a.word],parser.parseArgs(a,context)];
+						var f = context.resolvedWords[a.word];
+						var fargs = parser.parseArgs(a,context);
+						return function(stack,args,context) {
+							return f(stack,lang.clone(fargs),context);
+						}
 					} else if(context.data[a.word]) {
 						return parser.parseData(context.data[a.word], true);
 					} else {
@@ -496,10 +506,11 @@ define([
 			//var stack = [];
 			for(var k in context.DEFINE) {
 				if(context.DEFINE[k].words.length) {
-					context.resolvedWords[k] = function(stack,args,context,word){
+					context.resolvedWords[k] = function(word,stack,args,context){
 						var def = context.DEFINE[word];
 						// TODO when to clear the stack?
-						stack = def.exec && def.args.length ? def.args[0] : stack;
+						stack = def.args.length ? stack.concat(def.args[0]) : stack;
+						stack = stack.concat(args);
 						array.forEach(def.words,function(block) {
 							array.forEach(block,function(w) {
 								stripSingles(w,context);
@@ -512,6 +523,7 @@ define([
 						});
 						return stack;
 					}
+					context.resolvedWords[k] = context.resolvedWords[k].bind(undefined,k)
 				}
 			}
 			return context;
@@ -674,7 +686,7 @@ define([
 			};
 			var d = new Deferred();
 			if(direct) {
-				d.resolve(file);
+				d.resolve(direct);
 			} else {
 				d = request.get(file);
 			}
