@@ -21,15 +21,8 @@ define(["dojo/_base/lang","dojo/_base/array"],
 				}
 			});
 			var a = f.apply(f,fargs);
+			if(a) stack = stack.concat(a);
 			return stack;
-		},
-		args2stack: function(stack,args,context) {
-			var l = stack.pop();
-			args = args.splice(-l);
-			return stack.concat(args);
-		},
-		quote:function(stack,args,context) {
-			console.log(stack,args)
 		},
 		dup: function(stack,args,context) {
 			var x = stack.pop();
@@ -37,16 +30,9 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			stack = stack.concat(args);
 			return stack;
 		},
-		dupd:function(stack,args,context) {
-			stack = concat.dip(stack,[concat.dup],context);
-			return stack;
-		},
-		dupdd:function(stack,args,context) {
-			stack = concat.dip(stack,[concat.dupd],context);
-			return stack;
-		},
 		pop:function(stack,args,context){
 			stack.pop();
+			stack = stack.concat(args);
 			return stack;
 		},
 		swap:function(stack,args,context){
@@ -54,11 +40,6 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var y = stack.pop();
 			stack.push(x);
 			stack.push(y);
-			stack = stack.concat(args);
-			return stack;
-		},
-		neg:function(stack,args,context){
-			stack.push(-stack.pop());
 			stack = stack.concat(args);
 			return stack;
 		},
@@ -98,50 +79,5 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			return stack;
 		}
 	});
-	var operators = ["+","-","*","/","%"];
-	array.forEach(operators,function(o){
-		concat[o] = function(stack,args,context) {
-			var x = stack.pop();
-			var y = stack.pop();
-			stack.push(eval("y"+o+"x"));
-			stack = stack.concat(args);
-			return stack;
-		}
-	});
-	var math = Object.getOwnPropertyNames(Math);
-	array.forEach(math,function(k){
-		if(typeof Math[k] == "function") {
-			var len = Math[k].length;
-			if(len==1){
-				concat[k] = function(stack,args,context) {
-					stack.push(Math[k](stack.pop()));
-					if(args.length) stack = stack.concat(args);
-					return stack;
-				}
-			} else if(len==2){
-				concat[k] = function(stack,args,context) {
-					var x = Math[k](stack.pop(),stack.pop());
-					stack.push(x);
-					if(args.length) stack = stack.concat(args);
-					return stack;
-				}
-			}
-		} else {
-			concat[k] = function(stack,args,context) {
-				stack.push(Math[k]);
-				if(args.length) stack = stack.concat(args);
-				return stack;
-			}
-		}
-	});
-	/*
-	// combinators
-	Brief.Primitive("keep", function (q) { var x = Brief.Peek(); Brief.Run(q); Brief.Push(x); });
-	Brief.Primitive("bi", function (x, p, q) { Brief.Push(x); Brief.Run(p); Brief.Push(x); Brief.Run(q); });
-	Brief.Primitive("tri", function (x, p, q, r) { Brief.Push(x); Brief.Run(p); Brief.Push(x); Brief.Run(q); Brief.Push(x); Brief.Run(r); });
-	Brief.Primitive("2bi", function (y, x, p, q) { Brief.Push(y); Brief.Push(x); Brief.Run(p); Brief.Push(y); Brief.Push(x); Brief.Run(q); });
-	Brief.Primitive("bi*", function (y, x, p, q) { Brief.Push(y); Brief.Run(p); Brief.Push(x); Brief.Run(q); });
-
-	*/
 	return concat;
 });
