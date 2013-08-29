@@ -1,23 +1,15 @@
 define([
-	"dojo/_base/lang",
-	"dojo/_base/array",
-	"dojo/dom-style"
-],
-	function(lang, array, domStyle){
-	
-	"use strict";
+"acuna/kernel/concat",
+"acuna/kernel/concat/extended",
+"dojo/dom-style"
+],function(concat,extended,domStyle){
 
-	var dom = lang.getObject("acuna.dom", true);
-	
-	dom.getStyle = function(stack,args,context){
-		var x = stack.pop();
-		var s = args.shift();
-		var r = domStyle.get(x.domNode,s);
-		r = r.indexOf("px") ? parseInt(r,10) : r;
-		stack.push(r);
-		stack = stack.concat(args);
-		return stack;
-	}
-	
-	return dom.getStyle;
+return function(stack,args,context){
+	stack = stack.concat(args.splice(0,1));
+	stack = extended['dupdd'](stack,[],context);
+	stack = concat['bridge'](stack,[domStyle.get],context);
+	stack = stack.concat(args);
+	return stack;
+};
+
 });

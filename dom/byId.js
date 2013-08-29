@@ -10,8 +10,9 @@ define([
 	var dom = lang.getObject("acuna.dom", true);
 	
 	dom.byId = function(stack,args,context){
-		var x = args.shift();
-		stack.push(ddom.byId(x,ddom.byId("body").contentDocument));
+		stack = stack.concat(args.splice(0,1));
+		stack.push(ddom.byId(stack.pop(),ddom.byId("body").contentDocument));
+		stack = stack.concat(args.splice(0,args.length));
 		return stack;
 	}
 	
