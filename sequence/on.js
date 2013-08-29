@@ -11,8 +11,6 @@ define(["dojo/_base/lang", "acuna/kernel/concat", "dojo/on"],
 		stack = concat.dupdd(stack,args,context);
 		stack.push(false);
 		stack = concat.bridge(stack,[on],context);
-		//stack = array.defer(stack,args,context);
-		//stack = array.apply(stack,[on],context);
 		
 		return stack;
 	}
