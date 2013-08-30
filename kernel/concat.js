@@ -13,15 +13,22 @@ define(["dojo/_base/lang","dojo/_base/array"],
 				if(typeof _ === "function") {
 					var lstack = array.map(stack,function(_) { return _ });
 					return function() {
-						console.log(arguments);
-						lstack = _(lstack,[],context);
+						lstack = _(lstack,Array.prototype.slice.call(arguments),context);
 					}
 				} else {
 					return _;
 				}
 			});
-			var a = f.apply(f,fargs);
+			var a = f.apply(window,fargs);
 			if(a) stack = stack.concat(a);
+			return stack;
+		},
+		args2stack: function(stack,args,context) {
+			return stack.concat(args);
+		},
+		object:function(stack,args,context){
+			stack.push(args.shift() || {});
+			stack = stack.concat(args);
 			return stack;
 		},
 		dup: function(stack,args,context) {

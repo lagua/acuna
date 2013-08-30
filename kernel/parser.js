@@ -532,7 +532,7 @@ define([
 						// TODO when to clear the stack?
 						stack = def.args.length ? stack.concat(def.args[0]) : stack;
 						if(def.args2stack) {
-							stack = stack.concat(args.splice(0,args2stack));
+							stack = stack.concat(args.splice(0,def.args2stack));
 						}
 						array.forEach(def.words,function(block) {
 							array.forEach(block,function(w) {

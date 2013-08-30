@@ -126,6 +126,25 @@
 					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,undefined, 3));
 				},direct,[],doc.documentElement);
 			}
+			tojs = function(){
+				var file = document.getElementById("file").value;
+				var direct = byId("text").value;
+				var context = {
+					DEFINE:{},
+					modules:{},
+					resolvedWords:{},
+					data:{},
+					blocks:{},
+					stack:[],
+					doc: doc || document.documentElement
+				};
+				parser.toJS(parser.parse(context,direct,file,true),function(js){;
+					doc.body.innerHTML = "<pre>"+js+"</pre>";
+				},{
+					useContextData:true,
+					module:true
+				});
+			}
 			load = function(){
 				var file = document.getElementById("file").value;
 				request.get(file).then(function(res){
@@ -147,8 +166,9 @@
 		</div>
 		<div id="col2">
 			<div id="btn">
-				<input id="file" type="text" list="files" value="concat.una"><button onclick="load()">Load</button><button onclick="show()">Show</button><button onclick="go()">Go</button>
+				<input id="file" type="text" list="files" value="concat.una"><button onclick="load()">Load</button><button onclick="show()">Show</button><button onclick="go()">Go</button><button onclick="tojs()">To JS</button>
 				<datalist id="files">
+					<option>requestnative.una</option>
 				   <option>concat.una</option>
 				   <option>test.una</option>
 				   <option>test2.una</option>
