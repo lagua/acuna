@@ -2,13 +2,12 @@ DEFINE
     "Concatenative test"
 
 USE "acuna/kernel/concat"
+USE "acuna/kernel/concat/math"
 
 3 4 max 7 neg dbl +
 
 
 DEFINE "dbl"
 	"add number to itself"
-
-USE "acuna/kernel/concat"
 
 dup +

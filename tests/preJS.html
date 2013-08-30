@@ -13,7 +13,7 @@
 		require([
 			"acuna/kernel/parser", "dojo/json", "dojo/dom-construct", "dojo/ready"
 		], function(parser, JSON, domConstruct,ready){
-			parser.load("acuna/dom/setStyle.una",function(context){
+			parser.load("concat.una",function(context){
 				parser.toJS(context,function(js){;
 					domConstruct.create("div",{
 						innerHTML:"<pre>"+js+"</pre>"
@@ -29,10 +29,6 @@
 	</script>
 </head>
 <body class="claro">
-		<div id="app">Click me!</div>
-		<p>
-			<a href="test.una">test.una</a>
-		</p>
 		<h3>The JavaScript equivalent</h3>
 </body>
 </html>

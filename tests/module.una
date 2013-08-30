@@ -2,6 +2,9 @@ DEFINE
 	"This is a test"
 
 USE "acuna/markup/html" "html"
+USE "acuna/query" "query"
+USE "acuna/style" "style"
+USE "acuna/sequence/on" "on"
 
 html
 	p
@@ -20,10 +23,6 @@ module
 
 DEFINE module
 	"test module"
-
-USE "acuna/query" "query"
-USE "acuna/style" "style"
-USE "acuna/sequence/on" "on"
 
 query "#test" style
 	color "green" on
