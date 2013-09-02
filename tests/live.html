@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-
+	<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
 	<title>Acuna test</title>
 <!--[if lt IE 9]>
 <script src="/js_shared/html5shiv.js"></script>
@@ -74,9 +73,11 @@
 		}
 .string { color: green; }
 .number { color: darkorange; }
-.boolean { color: blue; }
+.boolean { color: darkblue; }
 .null { color: magenta; }
 .key { color: red; }
+.DOMNode { color:blue; }
+.DOMNode:hover { text-decoration:underline; cursor:pointer; }
 	</style>
 	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script type="text/javascript">
@@ -85,7 +86,13 @@
 		    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
 		        var cls = 'number';
 		        if (/^"/.test(match)) {
-		            if (/:$/.test(match)) {
+		        	if(/DOMNode@/.test(match)) {
+		        		cls = "DOMNode";
+		        		match = match.replace(/\"/g,"");
+		        		match = match.replace("DOMNode@","");
+		        		var ar = match.split("#");
+		        		match = ar.length > 1 ? ar[0]+"<span class='boolean'>#"+ar[1]+"</span>" : ar[0];
+		        	} else if (/:$/.test(match)) {
 		                cls = 'key';
 		            } else {
 		                cls = 'string';
@@ -98,36 +105,64 @@
 		        return '<span class="' + cls + '">' + match + '</span>';
 		    });
 		}
-		var go,show;
-		require([
-			"acuna/kernel/parser", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
-		], function(parser, request, JSON, domConstruct,registry, ready){
-			var byId = function(id){
-				return document.getElementById(id);
-			}
-			var doc = byId("body").contentDocument;
-			doc.body.innerHTML = "Document";
-			go = function(){
+		//Returns true if it is a DOM node
+		function isNode(o){
+		  return (
+		    typeof Node === "object" ? o instanceof Node : 
+		    o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
+		  );
+		}
+		var byId = function(id){
+			return document.getElementById(id);
+		}
+		function go(){
+			require([
+				"acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
+			], function(parser, query, on, request, JSON, domConstruct,registry, ready){
 				//for(var k in registry._hash) registry.remove(k);
+				var b = byId("body");
+				var doc = b.contentDocument;
 				var file = document.getElementById("file").value;
 				var direct = byId("text").value;
+				Firebug.browser.browser = Firebug.browser.window = b.contentWindow;
+				Firebug.browser.document = doc;
+				Firebug.document = doc;
+				Firebug.window = b.contentWindow;
 				parser.execute(file,function(context){
 					console.log(context);
 					delete context.doc;
 					var seen = [];
 					byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
-					   if (typeof val == "object") {
-					        if (seen.indexOf(val) >= 0)
-					            return
+						if (typeof val == "object") {
+							if(isNode(val)) return "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "");
+					        if(seen.indexOf(val) > -1) return;
 					        seen.push(val)
-					    }
-					    return val;
+						}
+						return val;
 					}, 3));
-					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,undefined, 3));
-				},direct,[],doc.documentElement);
-			}
-			tojs = function(){
-				var file = document.getElementById("file").value;
+					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,function(key, val) {
+						return isNode(val) ? "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "") : val;
+					}, 3));
+					query(".DOMNode").forEach(function(el){
+						on(el,"mouseover",function(){
+							var v = this.firstChild.nodeValue;
+							if(this.firstChild.nextSibling) v += this.firstChild.nextSibling.firstChild.nodeValue;
+							Firebug.Inspector.drawBoxModel(query(v,doc.documentElement)[0]);
+						});
+						on(el,"mouseout",function(){
+							Firebug.Inspector.hideBoxModel();
+						});
+					});
+				},direct,[],doc.body);
+			});
+		}
+		function tojs(){
+			require([
+				"acuna/kernel/parser"
+			], function(parser, query, on, request, JSON, domConstruct,registry, ready){
+				var b = byId("body");
+				var doc = b.contentDocument;
+				var file = byId("file").value;
 				var direct = byId("text").value;
 				var context = {
 					DEFINE:{},
@@ -135,8 +170,7 @@
 					resolvedWords:{},
 					data:{},
 					blocks:{},
-					stack:[],
-					doc: doc || document.documentElement
+					stack:[]
 				};
 				parser.toJS(parser.parse(context,direct,file,true),function(js){;
 					doc.body.innerHTML = "<pre>"+js+"</pre>";
@@ -144,17 +178,34 @@
 					useContextData:true,
 					module:true
 				});
-			}
-			load = function(){
+			});
+		}
+		function load(){
+			require([
+				"dojo/request"
+			],function(request){
 				var file = document.getElementById("file").value;
 				request.get(file).then(function(res){
 					byId("text").value = res;
 				});
-			}
-			show = function(){
-				var file = document.getElementById("file").value;
-				window.open(file);
-			}
+			});
+		}
+		function show(){
+			var file = document.getElementById("file").value;
+			window.open(file);
+		}
+		require([
+			"dojo/ready","acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
+		], function(ready,parser, query, on, request, JSON, domConstruct,registry, ready){
+			ready(function(){
+				var b = byId("body");
+				var doc = b.contentDocument;
+				doc.body.innerHTML = "Document";
+				Firebug.browser.browser = Firebug.browser.window = b.contentWindow;
+				Firebug.browser.document = doc;
+				Firebug.document = doc;
+				Firebug.window = b.contentWindow;
+			});
 		});
 	</script>
 </head>
