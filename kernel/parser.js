@@ -761,16 +761,16 @@ define([
 				if(callback) callback(context);
 			});
 		},
-		execute:function(file,callback,direct,args,doc){
-			var context = {
+		execute:function(file,callback,direct,args,seed){
+			seed = seed || {};
+			var context = lang.mixin({
 				DEFINE:{},
 				modules:{},
 				resolvedWords:{},
 				data:{},
 				blocks:{},
-				stack:[],
-				doc: doc || document.documentElement
-			};
+				stack:[]
+			},seed);
 			var d = new Deferred();
 			if(direct) {
 				d.resolve(direct);
