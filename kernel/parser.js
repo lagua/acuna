@@ -363,7 +363,7 @@ define([
 								lang.mixin(context.resolvedWords,a);
 							}
 						} else {
-							if(typeof a == "function") {
+							if(typeof a == "function" || (typeof a == "object" && a instanceof Object)) {
 								context.resolvedWords[m.word] = a;
 							} else {
 								def.data[m.word] = a;
@@ -521,34 +521,88 @@ define([
 			}
 			return args;
 		},
-		words:function(context) {
-			//var use = [];
-			// words array is a chain
-			//var stack = [];
-			for(var k in context.DEFINE) {
-				if(context.DEFINE[k].words.length) {
-					context.resolvedWords[k] = function(word,stack,args,context){
-						var def = context.DEFINE[word];
-						// TODO when to clear the stack?
-						stack = def.args.length ? stack.concat(def.args[0]) : stack;
-						if(def.args2stack) {
-							stack = stack.concat(args.splice(0,def.args2stack));
+		parseWord:function(w,context){
+			var obj = {};
+			var mixed = false;
+			obj[w.word] = {};
+			var keys = [];
+			// TODO use array for mixed content, object for anything else
+			for(var i=0;i<w.args.length;i++) {
+				var a = w.args[i];
+				
+				var key = a.word;
+				mixed = mixed || keys.indexOf(key)>-1;
+				
+				var res = typeof a == "object" && a instanceof Word ? parser.parseWord(a,context) : a;
+				if(typeof a == "object" && a instanceof Word) {
+					var ar = a.word.split(".");
+					var rw = ar.length>1 ? context.resolvedWords[ar[0]][ar[1]] : context.resolvedWords[a.word];
+					if(rw) {
+						var f = rw;
+						if(!a.args.length) {
+							res = f;
+						} else {
+							var fargs = parser.parseWord(a,context);
+							res = function(stack,args,context) {
+								return f(stack,lang.clone(fargs),context);
+							}
 						}
-						array.forEach(def.words,function(block) {
-							array.forEach(block,function(w) {
-								stripSingles(w,context);
-								var args = parser.parseArgs(w,def,context);
-								var f = context.resolvedWords[w.word];
-								if(f) {
-									stack = f(stack,args,context,w.word);
-								}
-							});
-						});
-						stack = stack.concat(args);
-						return stack;
 					}
-					context.resolvedWords[k] = context.resolvedWords[k].bind(undefined,k);
 				}
+				mixed = mixed || (typeof res != "object" && w.args.length > 1);
+				
+				keys.push(key);
+				
+				if(mixed) {
+					if(!(obj[w.word] instanceof Array)) {
+						if(typeof obj[w.word] != "object") {
+							obj[w.word] = [obj[w.word]];
+						} else {
+							var o = lang.clone(obj[w.word]);
+							obj[w.word] = [];
+							for(var k in o) {
+								var newo = {};
+								newo[k] = o[k];
+								obj[w.word].push(newo);
+							}
+						}
+					}
+					obj[w.word].push(res);
+				} else {
+					obj[w.word] = (typeof res == "object" && res instanceof Object) ? lang.mixin(obj[w.word],res) : res;
+				}
+			}
+			return obj;
+		},
+		words:function(context) {
+			var f = function(word){
+				var def = context.DEFINE[word];
+				return function(stack,args,context){
+					// TODO when to clear the stack?
+					stack = def.args.length ? stack.concat(def.args[0]) : stack;
+					// args2stack should be a hint, because args are not passed around!
+					if(def.args2stack) {
+						stack = stack.concat(args.splice(0,def.args2stack));
+					}
+					array.forEach(def.words,function(block) {
+						array.forEach(block,function(w) {
+							stripSingles(w,context);
+							//args = parser.parseArgs(w,def,context);
+							var wo = parser.parseWord(w,context);
+							var args = wo && wo[w.word] ? wo[w.word] : [];
+							args = typeof args == "object" && args instanceof Object && !Object.size(args) ? [] : args;
+							args = args instanceof Array ? args : [args];
+							var f = context.resolvedWords[w.word];
+							if(f) {
+								stack = f(stack,args,context,w.word);
+							}
+						});
+					});
+					return stack.concat(args);
+				}
+			};
+			for(var k in context.DEFINE) {
+				if(context.DEFINE[k].words.length) context.resolvedWords[k] = f(k);
 			}
 			return context;
 		},
@@ -613,10 +667,6 @@ define([
 				}
 				reqs.push('"'+m+'"');
 			}
-			var jscontext = {
-				stack:[],
-				data:data
-			};
 			var getResolved = function(t){
 				for(var m in modules) {
 					if(modules[m].targets[t]) return modules[m];
@@ -668,7 +718,7 @@ define([
 							str += t+"stack = "+f+"(stack,"+args+",context);\n";
 						});
 					});
-					str += t+"return stack;\n";
+					str += t+"return stack.concat(args);\n";
 					str += "\t};\n\n";
 				}
 				t = options.module ? "\t\t" : "\t";
@@ -688,9 +738,8 @@ define([
 						str += t+"stack = "+f+"(stack,"+args+",context);\n";
 					});
 				});
-				str += t+"stack = stack.concat(args);\n";
+				str += t+"return stack.concat(args);\n";
 				if(options.module) {
-					str += "\t\treturn stack;\n";
 					str += "\t};\n";
 				}
 				
