@@ -121,16 +121,14 @@
 			], function(parser, query, on, request, JSON, domConstruct,registry, ready){
 				//for(var k in registry._hash) registry.remove(k);
 				var b = byId("body");
-				var doc = b.contentDocument;
 				var file = document.getElementById("file").value;
 				var direct = byId("text").value;
 				Firebug.browser.browser = Firebug.browser.window = b.contentWindow;
-				Firebug.browser.document = doc;
-				Firebug.document = doc;
+				Firebug.browser.document = b.contentDocument;
+				Firebug.document = b.contentDocument;
 				Firebug.window = b.contentWindow;
 				parser.execute(file,function(context){
 					console.log(context);
-					delete context.doc;
 					var seen = [];
 					byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
 						if (typeof val == "object") {
@@ -147,13 +145,16 @@
 						on(el,"mouseover",function(){
 							var v = this.firstChild.nodeValue;
 							if(this.firstChild.nextSibling) v += this.firstChild.nextSibling.firstChild.nodeValue;
-							Firebug.Inspector.drawBoxModel(query(v,doc.documentElement)[0]);
+							Firebug.Inspector.drawBoxModel(query(v,b.contentDocument.documentElement)[0]);
 						});
 						on(el,"mouseout",function(){
 							Firebug.Inspector.hideBoxModel();
 						});
 					});
-				},direct,[],doc.body);
+				},direct,[],{
+					document:b.contentDocument,
+					window:b.contentWindow
+				});
 			});
 		}
 		function tojs(){
@@ -161,7 +162,6 @@
 				"acuna/kernel/parser"
 			], function(parser, query, on, request, JSON, domConstruct,registry, ready){
 				var b = byId("body");
-				var doc = b.contentDocument;
 				var file = byId("file").value;
 				var direct = byId("text").value;
 				var context = {
@@ -173,7 +173,7 @@
 					stack:[]
 				};
 				parser.toJS(parser.parse(context,direct,file,true),function(js){;
-					doc.body.innerHTML = "<pre>"+js+"</pre>";
+					b.contentDocument.body.innerHTML = "<pre>"+js+"</pre>";
 				},{
 					useContextData:true,
 					module:true
@@ -197,15 +197,6 @@
 		require([
 			"dojo/ready","acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
 		], function(ready,parser, query, on, request, JSON, domConstruct,registry, ready){
-			ready(function(){
-				var b = byId("body");
-				var doc = b.contentDocument;
-				doc.body.innerHTML = "Document";
-				Firebug.browser.browser = Firebug.browser.window = b.contentWindow;
-				Firebug.browser.document = doc;
-				Firebug.document = doc;
-				Firebug.window = b.contentWindow;
-			});
 		});
 	</script>
 </head>
