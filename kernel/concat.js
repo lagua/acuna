@@ -8,7 +8,12 @@ define(["dojo/_base/lang","dojo/_base/array"],
 		bridge: function(stack,args,context){
 			// the function to bridge
 			var f = args.shift();
-			var fargs = stack.splice(-f.length);
+			var l = f.length;
+			if(typeof f !== "function") {
+				l = parseInt(f,10);
+				f = args.shift();
+			}
+			var fargs = stack.splice(-l);
 			fargs = fargs.map(function(_){
 				if(typeof _ === "function") {
 					var lstack = array.map(stack,function(_) { return _ });
@@ -22,9 +27,6 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var a = f.apply(window,fargs);
 			if(a) stack = stack.concat(a);
 			return stack;
-		},
-		args2stack: function(stack,args,context) {
-			return stack.concat(args);
 		},
 		object:function(stack,args,context){
 			stack.push(args.shift() || {});
