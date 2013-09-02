@@ -7,6 +7,13 @@ define(["dojo/_base/lang", "dojo/_base/array"],
 
 	kernel.array = {};
 	lang.mixin(kernel.array, {
+		forEach: function(stack,args,context){
+			var f = args.shift();
+			array.forEach(stack.pop(),function(_){
+				f.apply(null,[[_]]);
+			});
+			return stack.concat(args.splice(0,args.length));
+		},
 		merge: function(stack,args,context) {
 			return [stack,args];
 		},
