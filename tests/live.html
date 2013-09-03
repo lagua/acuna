@@ -2,6 +2,9 @@
 <html>
 <head>
 	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<script>
+	window.nativeconsole = window.console;
+	</script>
 	<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
 	<title>Acuna test</title>
 <!--[if lt IE 9]>
@@ -17,8 +20,8 @@
 		#root {
 			display: -webkit-flex;
   			display: flex;
-		    width:100%;
-		    height:100%;
+			width:100%;
+			height:100%;
 		}
 		#text {
 			resize:none;
@@ -30,22 +33,22 @@
   			display: flex;
   			flex-direction:column;
   			-webkit-flex-direction:column;
-		    flex:1;
-		    -webkit-flex:1;
+			flex:1;
+			-webkit-flex:1;
 		}
 		#col2 {
 			display: -webkit-flex;
   			display: flex;
   			flex-direction:column;
   			-webkit-flex-direction:column;
-		    flex:1;
-		    -webkit-flex:1;
+			flex:1;
+			-webkit-flex:1;
 		}
 		#stack {
 			overflow:auto;
 			flex: 1;
 			-webkit-flex:1;
-		    border: 1px inset black;
+			border: 1px inset black;
 		}
 		#context {
 			overflow:auto;
@@ -65,81 +68,108 @@
 			margin:5px;
 		}
 		pre {
-		 white-space: pre-wrap;       /* css-3 */
+		 white-space: pre-wrap;	   /* css-3 */
 		 white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-		 white-space: -pre-wrap;      /* Opera 4-6 */
-		 white-space: -o-pre-wrap;    /* Opera 7 */
-		 word-wrap: break-word;       /* Internet Explorer 5.5+ */
+		 white-space: -pre-wrap;	  /* Opera 4-6 */
+		 white-space: -o-pre-wrap;	/* Opera 7 */
+		 word-wrap: break-word;	   /* Internet Explorer 5.5+ */
 		}
-.string { color: green; }
+.string { color: red; }
 .number { color: darkorange; }
 .boolean { color: darkblue; }
 .null { color: magenta; }
-.key { color: red; }
+.key { color: #000; font-weight:bold; }
+.function { color: green; }
 .DOMNode { color:blue; }
 .DOMNode:hover { text-decoration:underline; cursor:pointer; }
 	</style>
 	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script type="text/javascript">
 		function syntaxHighlight(json) {
-		    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-		        var cls = 'number';
-		        if (/^"/.test(match)) {
-		        	if(/DOMNode@/.test(match)) {
-		        		cls = "DOMNode";
-		        		match = match.replace(/\"/g,"");
-		        		match = match.replace("DOMNode@","");
-		        		var ar = match.split("#");
-		        		match = ar.length > 1 ? ar[0]+"<span class='boolean'>#"+ar[1]+"</span>" : ar[0];
-		        	} else if (/:$/.test(match)) {
-		                cls = 'key';
-		            } else {
-		                cls = 'string';
-		            }
-		        } else if (/true|false/.test(match)) {
-		            cls = 'boolean';
-		        } else if (/null/.test(match)) {
-		            cls = 'null';
-		        }
-		        return '<span class="' + cls + '">' + match + '</span>';
-		    });
+			json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+				var cls = 'number';
+				if (/^"/.test(match)) {
+					if(/DOMNode@/.test(match)) {
+						cls = "DOMNode";
+						match = match.replace(/\"/g,"");
+						match = match.replace("DOMNode@","");
+						var ar = match.split("#");
+						match = ar.length > 1 ? ar[0]+"<span class='boolean'>#"+ar[1]+"</span>" : ar[0];
+					} else if (/:$/.test(match)) {
+						match = match.replace(/\"/g,"");
+						cls = 'key';
+					} else if (/function\(\)/.test(match)) {
+						match = match.replace(/\"/g,"");
+						cls = "function";
+					} else {
+						cls = 'string';
+					}
+				} else if (/true|false/.test(match)) {
+					cls = 'boolean';
+				} else if (/null/.test(match)) {
+					cls = 'null';
+				}
+				return '<span class="' + cls + '">' + match + '</span>';
+			});
 		}
 		//Returns true if it is a DOM node
 		function isNode(o){
 		  return (
-		    typeof Node === "object" ? o instanceof Node : 
-		    o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
+			typeof Node === "object" ? o instanceof Node : 
+			o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
 		  );
 		}
 		var byId = function(id){
 			return document.getElementById(id);
 		}
-		function go(){
-			require([
-				"acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
-			], function(parser, query, on, request, JSON, domConstruct,registry, ready){
-				//for(var k in registry._hash) registry.remove(k);
+		require([
+			"acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
+		], function(parser, query, on, request, JSON, domConstruct,registry, ready){
+			function go(first){
+				byId("next").firstChild.nodeValue = first ? "Next word" : "First word";
+				byId("next").style.color = first ? "red" : "black";
 				var b = byId("body");
 				var file = document.getElementById("file").value;
 				var direct = byId("text").value;
-				Firebug.browser.browser = Firebug.browser.window = b.contentWindow;
-				Firebug.browser.document = b.contentDocument;
-				Firebug.document = b.contentDocument;
-				Firebug.window = b.contentWindow;
-				parser.execute(file,function(context){
-					console.log(context);
+				var next = function(context){
+					if(context.breakonwords && context.breakonwords.length) {
+						var nextbt = byId("next");
+						var _h = on(nextbt,"click",function(){
+							_h.remove();
+							parser.nextword(context,function(context){
+								updateUI(context);
+							});
+						});
+					} else {
+						byId("next").firstChild.nodeValue = "First word";
+						byId("next").style.color = "black";
+						var _h = on(byId("next"),"click",function(){
+							_h.remove();
+							go(true);
+						});
+					}
+				};
+				if(!first) next({});
+				var updateUI = function(context){
+					Firebug.window = Firebug.browser.browser = Firebug.browser.window = context.window;
+					Firebug.document = Firebug.browser.document = context.document;
 					var seen = [];
 					byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
 						if (typeof val == "object") {
 							if(isNode(val)) return "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "");
-					        if(seen.indexOf(val) > -1) return;
-					        seen.push(val)
+							if(seen.indexOf(val) > -1) return;
+							seen.push(val)
 						}
 						return val;
 					}, 3));
 					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,function(key, val) {
-						return isNode(val) ? "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "") : val;
+						if(typeof val == "function") {
+							val = "function()";
+						} else if(typeof val == "object") {
+							if(isNode(val)) val = "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "")
+						}
+						return val;
 					}, 3));
 					query(".DOMNode").forEach(function(el){
 						on(el,"mouseover",function(){
@@ -151,16 +181,17 @@
 							Firebug.Inspector.hideBoxModel();
 						});
 					});
+					if(first) next(context);
+				};
+				parser.execute(file,function(context){
+					updateUI(context);
 				},direct,[],{
 					document:b.contentDocument,
-					window:b.contentWindow
+					window:b.contentWindow,
+					breakonwords: first ? [] : false
 				});
-			});
-		}
-		function tojs(){
-			require([
-				"acuna/kernel/parser"
-			], function(parser, query, on, request, JSON, domConstruct,registry, ready){
+			};
+			function tojs(){
 				var b = byId("body");
 				var file = byId("file").value;
 				var direct = byId("text").value;
@@ -178,25 +209,30 @@
 					useContextData:true,
 					module:true
 				});
-			});
-		}
-		function load(){
-			require([
-				"dojo/request"
-			],function(request){
+			};
+			function load(){
 				var file = document.getElementById("file").value;
 				request.get(file).then(function(res){
 					byId("text").value = res;
 				});
+			};
+			function show(){
+				var file = document.getElementById("file").value;
+				window.open(file);
+			};
+			ready(function(){
+				window.console = window.nativeconsole;
+				on(byId("load"),"click",load);
+				on(byId("show"),"click",show);
+				on(byId("tojs"),"click",tojs);
+				on(byId("go"),"click",function(){
+					go();
+				});
+				var _h = on(byId("next"),"click",function(){
+					_h.remove();
+					go(true);
+				});
 			});
-		}
-		function show(){
-			var file = document.getElementById("file").value;
-			window.open(file);
-		}
-		require([
-			"dojo/ready","acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
-		], function(ready,parser, query, on, request, JSON, domConstruct,registry, ready){
 		});
 	</script>
 </head>
@@ -208,7 +244,12 @@
 		</div>
 		<div id="col2">
 			<div id="btn">
-				<input id="file" type="text" list="files" value="concat.una"><button onclick="load()">Load</button><button onclick="show()">Show</button><button onclick="go()">Go</button><button onclick="tojs()">To JS</button>
+				<input id="file" type="text" list="files" value="concat.una">
+				<button id="load">Load</button>
+				<button id="show">Show</button>
+				<button id="go">Go</button>
+				<button id="next">First word</button>
+				<button id="tojs">To JS</button>
 				<datalist id="files">
 					<option>requestnative.una</option>
 				   <option>concat.una</option>
