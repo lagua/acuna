@@ -542,7 +542,10 @@ define([
 						if(!a.args.length) {
 							res = f;
 						} else {
-							var fargs = parser.parseWord(a,context);
+							var wo = parser.parseWord(a,context);
+							var fargs = wo && wo[a.word] ? wo[a.word] : [];
+							fargs = typeof fargs == "object" && fargs instanceof Object && !Object.size(fargs) ? [] : fargs;
+							fargs = fargs instanceof Array ? fargs : [fargs];
 							res = function(stack,args,context) {
 								return f(stack,lang.clone(fargs),context);
 							}
@@ -584,20 +587,39 @@ define([
 					if(def.args2stack) {
 						stack = stack.concat(args.splice(0,def.args2stack));
 					}
+					var breakonwords = [];
 					array.forEach(def.words,function(block) {
 						array.forEach(block,function(w) {
-							stripSingles(w,context);
-							//args = parser.parseArgs(w,def,context);
-							var wo = parser.parseWord(w,context);
-							var args = wo && wo[w.word] ? wo[w.word] : [];
-							args = typeof args == "object" && args instanceof Object && !Object.size(args) ? [] : args;
-							args = args instanceof Array ? args : [args];
-							var f = context.resolvedWords[w.word];
-							if(f) {
-								stack = f(stack,args,context,w.word);
+							if(context.resolvedWords[w.word]) {
+								stripSingles(w,context);
+								//args = parser.parseArgs(w,def,context);
+								var wo = parser.parseWord(w,context);
+								var args = wo && wo[w.word] ? wo[w.word] : [];
+								args = typeof args == "object" && args instanceof Object && !Object.size(args) ? [] : args;
+								args = args instanceof Array ? args : [args];
+								
+								if(context.breakonwords) {
+									var f = function(word,args){
+										return function(stack,context) {
+											console.log(word);
+											stack = context.resolvedWords[word](stack,args,context,word);
+											return stack;
+										}
+									};
+									breakonwords.push(f(w.word,args));
+								} else {
+									var f = function(word){
+										return function(stack,args,context) {
+											stack = context.resolvedWords[word](stack,args,context,word);
+											return stack;
+										}
+									};
+									stack = f(w.word)(stack,args,context);
+								}
 							}
 						});
 					});
+					if(context.breakonwords) context.breakonwords = breakonwords.concat(context.breakonwords);
 					return stack.concat(args);
 				}
 			};
@@ -761,6 +783,15 @@ define([
 				if(callback) callback(context);
 			});
 		},
+		nextword:function(context,callback){
+			var f = context.breakonwords.shift();
+			var stack = context.stack;
+			stack = f(stack,context);
+			context.stack = stack;
+			if(callback) {
+				callback(context);
+			}
+		},
 		execute:function(file,callback,direct,args,seed){
 			seed = seed || {};
 			var context = lang.mixin({
@@ -782,7 +813,10 @@ define([
 				context = parser.define(context);
 				context = parser.use(context,function(context){
 					context = parser.words(context);
-					if(context.resolvedWords[context.exec]) {
+					if(context.breakonwords) {
+						console.log(context.exec);
+						stack = context.resolvedWords[context.exec]([],args || [],context,context.exec);
+					} else if(context.resolvedWords[context.exec]) {
 						stack = context.resolvedWords[context.exec]([],args || [],context,context.exec);
 					} else if(context.DEFINE[context.exec].args.length) {
 						stack = context.DEFINE[context.exec].args[0];
