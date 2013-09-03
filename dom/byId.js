@@ -11,7 +11,7 @@ define([
 	
 	dom.byId = function(stack,args,context){
 		stack = stack.concat(args.splice(0,1));
-		stack.push(ddom.byId(stack.pop(),ddom.byId("body").contentDocument));
+		stack.push(ddom.byId(stack.pop(),context.document));
 		stack = stack.concat(args.splice(0,args.length));
 		return stack;
 	}
