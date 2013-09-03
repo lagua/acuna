@@ -34,11 +34,13 @@ define([
 		}).join("");
 	};
 	
-	var Word = function(word,depth,line,block,args){
+	var Word = function(word,def,block,line,index,depth,args){
 		this.word = word;
-		this.depth = depth;
-		this.line = line;
+		this.def = def;
 		this.block = block;
+		this.line = line;
+		this.index = index;
+		this.depth = depth;
 		this.args = args;
 	};
 	
@@ -79,8 +81,9 @@ define([
 			var defWord = ar.join(".");
 			var defblocks = string.split(/(?:\n){3,}?/g);
 			var useWord;
+			context.string = string;
 			defblocks.reverse();
-			defblocks.forEach(function(defblock){
+			defblocks.forEach(function(defblock,defno){
 				var word, def;
 				// search each block in una string
 				defblock.split(/(?:\n){2,}?/g).forEach(function(block,blockno,blocks){
@@ -108,7 +111,7 @@ define([
 						// if useWord exists the string is loaded from an external file
 						if(useWord) {
 							context.blocks[useWord] = defblock;
-							word = new Word(useWord,0,0,0,[]);
+							word = new Word(useWord,defno,0,0,0,0,[]);
 							word.path = path;
 							word.exec = !parts[1];
 							word.file = file;
@@ -164,7 +167,7 @@ define([
 								if(p.toUpperCase()!="USE" && context.resolvedWords[p]) {
 									word = context.resolvedWords[p];
 								} else {
-									word = new Word(p,depth,lineno,blockno,[]);
+									word = new Word(p,defno,blockno,lineno,index,depth,[]);
 								}
 								var leftword = parts[index-1] ? parts[index-1] : null;
 								leftword = leftword && lineno<lines.length-1 && leftword.indexOf("\"")==-1 && !isNumericOrBool(leftword);
@@ -265,7 +268,7 @@ define([
 				if(!def.USE.length) {
 					if(def.words.length && !def.args.length) {
 						// treat like args and parse
-						context.data[k] = parser.parseData(new Word(k,0,0,0,def.words[0]))[k];
+						context.data[k] = parser.parseData(new Word(k,0,0,0,0,0,def.words[0]))[k];
 					} else {
 						context.data[k] = def.args;
 					}
@@ -601,12 +604,11 @@ define([
 								if(context.breakonwords) {
 									var f = function(word,args){
 										return function(stack,context) {
-											console.log(word);
 											stack = context.resolvedWords[word](stack,args,context,word);
 											return stack;
 										}
 									};
-									breakonwords.push(f(w.word,args));
+									breakonwords.push({w:w,f:f(w.word,args)});
 								} else {
 									var f = function(word){
 										return function(stack,args,context) {
@@ -784,13 +786,17 @@ define([
 			});
 		},
 		nextword:function(context,callback){
-			var f = context.breakonwords.shift();
+			var w = context.breakonwords.shift();
+			console.log(w.w.word)
+			parser.onWord(w.w);
 			var stack = context.stack;
-			stack = f(stack,context);
+			stack = w.f(stack,context);
 			context.stack = stack;
 			if(callback) {
 				callback(context);
 			}
+		},
+		onWord:function(w){
 		},
 		execute:function(file,callback,direct,args,seed){
 			seed = seed || {};
