@@ -28,6 +28,14 @@
 			flex:2;
 			-webkit-flex:2;
 		}
+		#preview {
+			display:none;
+			overflow:auto;
+			resize:none;
+			flex:2;
+			padding:2px;
+			-webkit-flex:2;
+		}
 		#col1 {
 			display: -webkit-flex;
   			display: flex;
@@ -68,23 +76,46 @@
 			margin:5px;
 		}
 		pre {
-		 white-space: pre-wrap;	   /* css-3 */
-		 white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-		 white-space: -pre-wrap;	  /* Opera 4-6 */
-		 white-space: -o-pre-wrap;	/* Opera 7 */
-		 word-wrap: break-word;	   /* Internet Explorer 5.5+ */
+			margin:0;
+			white-space: pre-wrap;	   /* css-3 */
+			white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+			white-space: -pre-wrap;	  /* Opera 4-6 */
+			white-space: -o-pre-wrap;	/* Opera 7 */
+			word-wrap: break-word;	   /* Internet Explorer 5.5+ */
 		}
-.string { color: red; }
-.number { color: darkorange; }
-.boolean { color: darkblue; }
-.null { color: magenta; }
-.key { color: #000; font-weight:bold; }
-.function { color: green; }
-.DOMNode { color:blue; }
-.DOMNode:hover { text-decoration:underline; cursor:pointer; }
+		.block {
+		    margin-bottom: 1.5em;
+		}
+		.word {
+			color: #333;
+			font-weight:bold;
+		}
+		.hilite {
+			background-color:yellow;
+			outline:1px solid gray;
+		}
+		.string { color: red; }
+		.number { color: darkorange; }
+		.boolean { color: darkblue; }
+		.null { color: magenta; }
+		.key { color: #000; font-weight:bold; }
+		.function { color: green; }
+		.DOMNode { color:blue; }
+		.DOMNode:hover { text-decoration:underline; cursor:pointer; }
 	</style>
 	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script type="text/javascript">
+		var isBool = function(n){
+			return n==="true" || n==="false";
+		};
+		
+		var isNumericOrBool = function(n) {
+			return isBool(n) || isNumeric(n);
+		};
+		
+		var isNumeric = function(n) {
+			return !isNaN(parseFloat(n)) && isFinite(n);
+		};
 		function syntaxHighlight(json) {
 			json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 			return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
@@ -113,6 +144,46 @@
 				return '<span class="' + cls + '">' + match + '</span>';
 			});
 		}
+		function hilite(una) {
+			una = una.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			var defblocks = una.split(/(?:\n){3,}?/g);
+			defblocks.reverse();
+			defblocks = defblocks.map(function(def,defno){
+				var blocks = def.split(/(?:\n){2,}?/g).map(function(block,blockno){
+					var lines = block.split(/\n/).map(function(line,lineno){
+						if(!line) return "";
+						var tmatch = line.match(/^\t+/g);
+						var tabs = tmatch && tmatch.length>0 ? tmatch[0] : null;
+						// count tabs
+						var depth = tabs ? tabs.match(/\t/g).length : 0;
+						// split line on spaces, preserving anything between quotes
+						line = line.replace(tabs,"");
+						var parts = line.match(/[^"\s]+|"(.*?)"/g);
+						parts = parts.map(function(p,index){
+							// check if it is a number or string
+							if(p.indexOf("\"")==-1 && !isNumericOrBool(p)) {
+								return '<span class="word" id="w_'+defno+'_'+blockno+'_'+lineno+'_'+index+'">' + p + '</span>';
+							} else {
+								var cls = 'number';
+								if (/^"/.test(p)) {
+									cls = 'string';
+								} else if (/true|false/.test(p)) {
+									cls = 'boolean';
+								} else if (/null/.test(p)) {
+									cls = 'null';
+								}
+								return '<span class="' + cls + '">' + p + '</span>';
+							}
+						});
+						return (tabs ? tabs : "")+parts.join(" ");
+					});
+					return lines.join("\n");
+				});
+				return "<div class='block'>"+blocks.join("</div><div class='block'>")+"</div>";
+			});
+			
+			return defblocks.reverse().join("");
+		}
 		//Returns true if it is a DOM node
 		function isNode(o){
 		  return (
@@ -124,74 +195,99 @@
 			return document.getElementById(id);
 		}
 		require([
-			"acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dijit/registry", "dojo/ready"
-		], function(parser, query, on, request, JSON, domConstruct,registry, ready){
-			function go(first){
-				byId("next").firstChild.nodeValue = first ? "Next word" : "First word";
-				byId("next").style.color = first ? "red" : "black";
-				var b = byId("body");
-				var file = document.getElementById("file").value;
-				var direct = byId("text").value;
-				var next = function(context){
-					if(context.breakonwords && context.breakonwords.length) {
-						var nextbt = byId("next");
-						var _h = on(nextbt,"click",function(){
-							_h.remove();
-							parser.nextword(context,function(context){
-								updateUI(context);
-							});
+			"acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dojo/dom-class", "dijit/registry", "dojo/ready"
+		], function(parser, query, on, request, JSON, domConstruct, domClass, registry, ready){
+			var addPreview = function(context){
+				var prev = byId("preview")
+				prev.innerHTML = "<pre>"+hilite(context.string)+"</pre>";
+				prev.style.display = "block";
+				byId("text").style.display = "none";
+			};
+			var updateUI = function(context,first){
+				Firebug.window = Firebug.browser.browser = Firebug.browser.window = context.window;
+				Firebug.document = Firebug.browser.document = context.document;
+				var seen = [];
+				byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
+					if (typeof val == "object") {
+						if(isNode(val)) return "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "");
+						if(seen.indexOf(val) > -1) return;
+						seen.push(val)
+					}
+					return val;
+				}, 3));
+				byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,function(key, val) {
+					if(typeof val == "function") {
+						val = "function()";
+					} else if(typeof val == "object") {
+						if(isNode(val)) val = "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "")
+					}
+					return val;
+				}, 3));
+				query(".DOMNode").forEach(function(el){
+					on(el,"mouseover",function(){
+						var v = this.firstChild.nodeValue;
+						if(this.firstChild.nextSibling) v += this.firstChild.nextSibling.firstChild.nodeValue;
+						Firebug.Inspector.drawBoxModel(query(v,context.document.documentElement)[0]);
+					});
+					on(el,"mouseout",function(){
+						Firebug.Inspector.hideBoxModel();
+					});
+				});
+				if(first) next(context);
+			};
+			var next = function(context){
+				if(context.breakonwords && context.breakonwords.length) {
+					var nextbt = byId("next");
+					var _h = on(nextbt,"click",function(){
+						_h.remove();
+						parser.nextword(context,function(context){
+							updateUI(context,true);
 						});
-					} else {
+					});
+				} else {
+					byId("next").firstChild.nodeValue = "Last Word";
+					byId("next").style.color = "blue";
+					var _h = on(byId("next"),"click",function(){
+						_h.remove();
+						if(previous) domClass.remove(previous,"hilite"); 
+						byId("preview").style.display = "none";
+						byId("text").style.display = "block";
 						byId("next").firstChild.nodeValue = "First word";
 						byId("next").style.color = "black";
-						var _h = on(byId("next"),"click",function(){
+						_h = on(byId("next"),"click",function(){
 							_h.remove();
 							go(true);
 						});
-					}
-				};
-				if(!first) next({});
-				var updateUI = function(context){
-					Firebug.window = Firebug.browser.browser = Firebug.browser.window = context.window;
-					Firebug.document = Firebug.browser.document = context.document;
-					var seen = [];
-					byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
-						if (typeof val == "object") {
-							if(isNode(val)) return "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "");
-							if(seen.indexOf(val) > -1) return;
-							seen.push(val)
-						}
-						return val;
-					}, 3));
-					byId("stack1").innerHTML = syntaxHighlight(JSON.stringify(context.stack,function(key, val) {
-						if(typeof val == "function") {
-							val = "function()";
-						} else if(typeof val == "object") {
-							if(isNode(val)) val = "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "")
-						}
-						return val;
-					}, 3));
-					query(".DOMNode").forEach(function(el){
-						on(el,"mouseover",function(){
-							var v = this.firstChild.nodeValue;
-							if(this.firstChild.nextSibling) v += this.firstChild.nextSibling.firstChild.nodeValue;
-							Firebug.Inspector.drawBoxModel(query(v,b.contentDocument.documentElement)[0]);
-						});
-						on(el,"mouseout",function(){
-							Firebug.Inspector.hideBoxModel();
-						});
 					});
-					if(first) next(context);
-				};
+				}
+			};
+			var previous;
+			var go = function(first){
+				byId("next").firstChild.nodeValue = first ? "Next word" : "First word";
+				byId("next").style.color = first ? "red" : "black";
+				parser.onWord = function(w){
+					if(previous) domClass.remove(previous,"hilite"); 
+					var id = "w_"+w.def+"_"+w.block+"_"+w.line+"_"+w.index;
+					var e = byId(id);
+					if(e) {
+						domClass.add(e,"hilite");
+						previous = e;
+					}
+				}
+				var b = byId("body");
+				var file = document.getElementById("file").value;
+				var direct = byId("text").value;
+				if(!first) next({});
 				parser.execute(file,function(context){
-					updateUI(context);
+					if(first) addPreview(context);
+					updateUI(context,first);
 				},direct,[],{
 					document:b.contentDocument,
 					window:b.contentWindow,
 					breakonwords: first ? [] : false
 				});
 			};
-			function tojs(){
+			var tojs = function(){
 				var b = byId("body");
 				var file = byId("file").value;
 				var direct = byId("text").value;
@@ -210,16 +306,17 @@
 					module:true
 				});
 			};
-			function load(){
+			var load = function(){
 				var file = document.getElementById("file").value;
 				request.get(file).then(function(res){
 					byId("text").value = res;
 				});
 			};
-			function show(){
+			var show = function(){
 				var file = document.getElementById("file").value;
 				window.open(file);
 			};
+			
 			ready(function(){
 				window.console = window.nativeconsole;
 				on(byId("load"),"click",load);
@@ -240,6 +337,7 @@
 	<div id="root">
 		<div id="col1">
 			<textarea id="text"></textarea>
+			<div id="preview"></div>
 			<div id="context"><pre id="context1">Context</pre></div>
 		</div>
 		<div id="col2">
