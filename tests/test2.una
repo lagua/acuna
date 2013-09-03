@@ -9,14 +9,16 @@ USE "acuna/dom/setStyle" "setStyle"
 USE "acuna/markup/html" "html"
 USE "dojo/on" "don"
 USE "acuna/kernel/concat"
+USE "acuna/kernel/concat/extended"
 
 html
-	div
-		@id "app"
-		"click me!"
-	div
-		@id "reset"
-		"reset me!"
+	body
+		div
+			@id "app"
+			"click me!"
+		div
+			@id "reset"
+			"reset me!"
 
 byId "app" setStyle "color" "blue"
 on
@@ -33,7 +35,9 @@ on
 
 
 DEFINE "on"
-    "event"
+	"event"
+	"#args2stack=2"
 
-dupdd false bridge
-    don
+dupdd bridge
+    3 don
+pop
