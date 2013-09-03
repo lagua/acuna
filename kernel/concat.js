@@ -16,9 +16,9 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var fargs = stack.splice(-l);
 			fargs = fargs.map(function(_){
 				if(typeof _ === "function") {
-					var lstack = array.map(stack,function(_) { return _ });
+					//var lstack = array.map(stack,function(_) { return _ });
 					return function() {
-						lstack = _(lstack,Array.prototype.slice.call(arguments),context);
+						stack = _(stack,Array.prototype.slice.call(arguments),context);
 					}
 				} else {
 					return _;
