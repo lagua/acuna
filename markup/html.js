@@ -91,8 +91,8 @@ define(["dojo/_base/lang", "dojo/_base/array","dojo/dom-construct"],
 	
 	markup.html = function(stack,args,context) {
 		var x = traverse("html",args);
-		stack.push(x.body);
 		domConstruct.place(x,context.document.documentElement,"replace");
+		stack.push(context.document.body);
 		return stack;
 	}
 	
