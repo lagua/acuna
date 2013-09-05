@@ -529,13 +529,13 @@ define([
 			var mixed = false;
 			obj[w.word] = {};
 			var keys = [];
-			// TODO use array for mixed content, object for anything else
+			var breakonwords = [];
+			// use array for mixed content, object for anything else
 			for(var i=0;i<w.args.length;i++) {
 				var a = w.args[i];
 				
 				var key = a.word;
 				mixed = mixed || keys.indexOf(key)>-1;
-				
 				var res = typeof a == "object" && a instanceof Word ? parser.parseWord(a,context) : a;
 				if(typeof a == "object" && a instanceof Word) {
 					var ar = a.word.split(".");
@@ -543,15 +543,36 @@ define([
 					if(rw) {
 						var f = rw;
 						if(!a.args.length) {
-							res = f;
+							/*if(context.breakonwords && w.word!="bridge") {
+								breakonwords.push({w:a,f:function(stack,context) {
+									return f(stack,[],context);
+								}});
+								res = function(stack,args,context){
+									console.log(arguments.callee.caller.toString())
+									return stack;
+								};
+							} else {*/
+								res = f;
+							//}
 						} else {
 							var wo = parser.parseWord(a,context);
 							var fargs = wo && wo[a.word] ? wo[a.word] : [];
 							fargs = typeof fargs == "object" && fargs instanceof Object && !Object.size(fargs) ? [] : fargs;
 							fargs = fargs instanceof Array ? fargs : [fargs];
-							res = function(stack,args,context) {
-								return f(stack,lang.clone(fargs),context);
-							}
+							/*if(context.breakonwords && w.word!="bridge") {
+								mixed = true;
+								breakonwords.push({w:a,f:function(stack,context) {
+									return f(stack,[],context);
+								}});
+								res = function(stack,args,context){
+									console.log(arguments.caller)
+									return stack.concat(fargs.slice());
+								}
+							} else {*/
+								res = function(stack,args,context) {
+									return f(stack,fargs.slice(),context);
+								};
+							//}
 						}
 					}
 				}
@@ -578,6 +599,7 @@ define([
 					obj[w.word] = (typeof res == "object" && res instanceof Object) ? lang.mixin(obj[w.word],res) : res;
 				}
 			}
+			//obj.breakonwords = breakonwords;
 			return obj;
 		},
 		words:function(context) {
@@ -609,6 +631,7 @@ define([
 										}
 									};
 									breakonwords.push({w:w,f:f(w.word,args)});
+									breakonwords = breakonwords.concat(wo.breakonwords);
 								} else {
 									var f = function(word){
 										return function(stack,args,context) {
