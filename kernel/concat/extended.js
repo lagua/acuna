@@ -1,7 +1,6 @@
 define(["dojo/_base/lang","acuna/kernel/concat"],
 	function(lang,concat){
 	
-	"use strict";
 	var extended = lang.getObject("acuna.kernel.concat.extended", true);
 
 	lang.mixin(extended, {

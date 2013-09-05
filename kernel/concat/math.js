@@ -1,7 +1,6 @@
 define(["dojo/_base/lang","dojo/_base/array"],
 	function(lang,array){
 	
-	"use strict";
 	var cmath = lang.getObject("acuna.kernel.concat.math", true);
 
 	lang.mixin(cmath, {

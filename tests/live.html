@@ -209,6 +209,7 @@
 				var seen = [];
 				byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
 					if (typeof val == "object") {
+						if(["window","document","breakwonwords"].indexOf(key) > -1) return;
 						if(isNode(val)) return "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "");
 						if(seen.indexOf(val) > -1) return;
 						seen.push(val)
@@ -235,6 +236,14 @@
 				});
 				if(first) next(context);
 			};
+			var resetNext = function(){
+				byId("next").firstChild.nodeValue = "First word";
+				byId("next").style.color = "black";
+				var _h = on(byId("next"),"click",function(){
+					_h.remove();
+					go(true);
+				});
+			}
 			var next = function(context){
 				if(context.breakonwords && context.breakonwords.length) {
 					var nextbt = byId("next");
@@ -252,12 +261,7 @@
 						if(previous) domClass.remove(previous,"hilite"); 
 						byId("preview").style.display = "none";
 						byId("text").style.display = "block";
-						byId("next").firstChild.nodeValue = "First word";
-						byId("next").style.color = "black";
-						_h = on(byId("next"),"click",function(){
-							_h.remove();
-							go(true);
-						});
+						resetNext();
 					});
 				}
 			};
@@ -277,7 +281,7 @@
 				var b = byId("body");
 				var file = document.getElementById("file").value;
 				var direct = byId("text").value;
-				if(!first) next({});
+				if(!first) resetNext();
 				parser.execute(file,function(context){
 					if(first) addPreview(context);
 					updateUI(context,first);
@@ -325,10 +329,7 @@
 				on(byId("go"),"click",function(){
 					go();
 				});
-				var _h = on(byId("next"),"click",function(){
-					_h.remove();
-					go(true);
-				});
+				resetNext();
 			});
 		});
 	</script>

@@ -1,7 +1,6 @@
 define(["dojo/_base/lang","dojo/_base/array"],
 	function(lang,array){
 	
-	"use strict";
 	var concat = lang.getObject("acuna.kernel.concat", true);
 
 	lang.mixin(concat, {
@@ -16,13 +15,14 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var fargs = stack.splice(-l);
 			fargs = fargs.map(function(_){
 				if(typeof _ === "function") {
-					//var lstack = array.map(stack,function(_) { return _ });
-					return function() {
-						stack = _(stack,Array.prototype.slice.call(arguments),context);
-					}
-				} else {
-					return _;
+					var f = function(_){
+						return function() {
+							return _(stack,Array.prototype.slice.call(arguments),context);
+						}
+					};
+					_ = f(_);
 				}
+				return _;
 			});
 			var a = f.apply(window,fargs);
 			if(a) stack = stack.concat(a);
