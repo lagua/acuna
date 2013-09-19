@@ -1,15 +1,13 @@
-DEFINE
+define
 	"This is a test"
 	"more comments"
 
-USE "acuna/query" "query"
-USE "acuna/dictionary" "dictionary"
-USE "acuna/dom/byId" "byId"
-USE "acuna/dom/setStyle" "setStyle"
-USE "acuna/markup/html" "html"
-USE "dojo/on" "don"
-USE "acuna/kernel/concat"
-USE "acuna/kernel/concat/extended"
+use "acuna/dom/byId" "byId"
+use "acuna/markup/html" "html"
+use "dojo/on" "don"
+use "dojo/dom-style" "domStyle"
+use "acuna/kernel"
+use "acuna/kernel/extended"
 
 html
 	body
@@ -30,13 +28,19 @@ on
 
 byId "reset"
 on
-	"click" compose
-		byId "app" setStyle "color" "blue" pop
+	"click" byId "app" setStyle "color" "black"
 
 
-DEFINE "on"
+define "setStyle" 2
+	"set style"
+
+dupdd bridge
+    3 domStyle.set
+pop
+
+
+define "on" 2
 	"event"
-	"#args2stack=2"
 
 dupdd bridge
     3 don

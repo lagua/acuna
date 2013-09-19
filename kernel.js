@@ -6,18 +6,16 @@ define(["dojo/_base/lang","dojo/_base/array"],
 	lang.mixin(concat, {
 		bridge: function(stack,args,context){
 			// the function to bridge
-			var f = args.shift();
-			var l = f.length;
-			if(typeof f !== "function") {
-				l = parseInt(f,10);
-				f = args.shift();
-			}
+			var f = stack.pop();
+			var l = stack.pop();
 			var fargs = stack.splice(-l);
+			var lstack = stack.slice();
 			fargs = fargs.map(function(_){
 				if(typeof _ === "function") {
 					var f = function(_){
 						return function() {
-							return _(stack,Array.prototype.slice.call(arguments),context);
+							lstack = _(lstack,[],context);
+							//return lstack.concat(Array.prototype.slice.call(arguments));
 						}
 					};
 					_ = f(_);
@@ -28,20 +26,22 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			if(a) stack = stack.concat(a);
 			return stack;
 		},
+		apply:function(stack,args,context) {
+			var f = stack.pop();
+			stack = f(stack,[],context);
+			return stack;
+		},
 		object:function(stack,args,context){
 			stack.push(args.shift() || {});
-			stack = stack.concat(args);
 			return stack;
 		},
 		dup: function(stack,args,context) {
 			var x = stack.pop();
 			stack = stack.concat([x,x]);
-			stack = stack.concat(args);
 			return stack;
 		},
 		pop:function(stack,args,context){
 			stack.pop();
-			stack = stack.concat(args);
 			return stack;
 		},
 		swap:function(stack,args,context){
@@ -49,7 +49,6 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var y = stack.pop();
 			stack.push(x);
 			stack.push(y);
-			stack = stack.concat(args);
 			return stack;
 		},
 		dip:function(stack,args,context){
@@ -59,7 +58,6 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var t = stack.pop();
 			stack = f(stack,args,context);
 			stack.push(t);
-			stack = stack.concat(args);
 			return stack;
 		},
 		compose:function(stack,args,context){
@@ -79,12 +77,10 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			var t = args.shift();
 			var f = args.shift();
 			stack.push(b ? t : f);
-			stack = stack.concat(args);
 			return stack;
 		},
 		"eq":function(stack,args,context){
 			stack.push(stack.pop() == stack.pop());
-			stack = stack.concat(args);
 			return stack;
 		}
 	});

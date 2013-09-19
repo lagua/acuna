@@ -2,10 +2,6 @@
 <html>
 <head>
 	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-	<script>
-	window.nativeconsole = window.console;
-	</script>
-	<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
 	<title>Acuna test</title>
 <!--[if lt IE 9]>
 <script src="/js_shared/html5shiv.js"></script>
@@ -204,8 +200,8 @@
 				byId("text").style.display = "none";
 			};
 			var updateUI = function(context,first){
-				Firebug.window = Firebug.browser.browser = Firebug.browser.window = context.window;
-				Firebug.document = Firebug.browser.document = context.document;
+				//Firebug.window = Firebug.browser.browser = Firebug.browser.window = context.window;
+				//Firebug.document = Firebug.browser.document = context.document;
 				var seen = [];
 				byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
 					if (typeof val == "object") {
@@ -228,10 +224,10 @@
 					on(el,"mouseover",function(){
 						var v = this.firstChild.nodeValue;
 						if(this.firstChild.nextSibling) v += this.firstChild.nextSibling.firstChild.nodeValue;
-						Firebug.Inspector.drawBoxModel(query(v,context.document.documentElement)[0]);
+						//Firebug.Inspector.drawBoxModel(query(v,context.document.documentElement)[0]);
 					});
 					on(el,"mouseout",function(){
-						Firebug.Inspector.hideBoxModel();
+						//Firebug.Inspector.hideBoxModel();
 					});
 				});
 				if(first) next(context);
@@ -322,7 +318,6 @@
 			};
 			
 			ready(function(){
-				window.console = window.nativeconsole;
 				on(byId("load"),"click",load);
 				on(byId("show"),"click",show);
 				on(byId("tojs"),"click",tojs);
@@ -351,11 +346,10 @@
 				<button id="tojs">To JS</button>
 				<datalist id="files">
 					<option>requestnative.una</option>
-					<option>havemax.una</option>
-					<option>concat.una</option>
-					<option>test.una</option>
-					<option>test2.una</option>
-					<option>module.una</option>
+				   <option>concat.una</option>
+				   <option>test.una</option>
+				   <option>test2.una</option>
+				   <option>module.una</option>
 				</datalist>
 			</div>
 			<div id="stack"><pre id="stack1">Stack</pre></div>

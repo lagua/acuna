@@ -27,6 +27,10 @@ define([
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 	
+	var isWord = function(a) {
+		return typeof a == "object" && a instanceof Word;
+	};
+	
 	var normalizeModule = function(m) {
 		var w = m.split("/").pop();
 		return array.map(w.split("-"),function(_,i){
@@ -34,14 +38,15 @@ define([
 		}).join("");
 	};
 	
-	var Word = function(word,def,block,line,index,depth,args){
+	var Word = function(word,def,block,line,index,depth,args,pre_args){
 		this.word = word;
 		this.def = def;
 		this.block = block;
 		this.line = line;
 		this.index = index;
 		this.depth = depth;
-		this.args = args;
+		this.args = args || [];
+		this.pre_args = pre_args || [];
 	};
 	
 	var stripSingles = function(w,context) {
@@ -120,6 +125,7 @@ define([
 							word.comments = [];
 							word.USE = [];
 							word.resolvedWords = {};
+							if(parts[2] && isNumeric(parts[2])) word.args2stack = parseInt(parts[2],10);
 							context.DEFINE[useWord] = def = parent = word;
 						}
 					}
@@ -169,28 +175,28 @@ define([
 								} else {
 									word = new Word(p,defno,blockno,lineno,index,depth,[]);
 								}
+								endword = index === parts.length-1 || target.toUpperCase() === "DEFINE";
 								var leftword = parts[index-1] ? parts[index-1] : null;
 								leftword = leftword && lineno<lines.length-1 && leftword.indexOf("\"")==-1 && !isNumericOrBool(leftword);
 								if(!leftword && parent && depth>curdepth) {
 									//parent = endword;
-									parent.args.push(word);
+									parent.pre_args.push(word);
 								} else if(parent && depth>0 && !inUse(def,p)) {
 									if(parent.depth>depth) {
 										// find ancestor with correct depth
 										parent = findParent(words[words.length-1]);
-										parent.args.push(word);
+										parent.pre_args.push(word);
 									} else if(parent.depth==depth) {
 										parent = findParent2(parent);
-										parent.args.push(word);
+										parent.pre_args.push(word);
 									} else {
-										parent.args.push(word);
+										parent.pre_args.push(word);
 									}
 								} else {
 									parent = word;
 									words.push(word);
 								}
 								if(p.toUpperCase()!="USE" && parent!=word) word.parent = parent;
-								//if(index==0 && endword) endword = false;
 								if(index==parts.length-1) {
 									parent = word;
 								}
@@ -217,33 +223,45 @@ define([
 										}
 										ar.push(val);
 									}
-									if(!endword && target.toUpperCase() != "DEFINE") {
-										if(word.parent && lineno>word.line && word.depth==depth) {
-											word.parent.args.push(val);
-										} else {
+									if(!endword) {
+										//if(word.parent && lineno>word.line && word.depth==depth) {
+										//	word.parent.pre_args.push(val);
+										//} else if(lineno>word.line){
+										//	word.pre_args.push(val);
+										//} else {
 											word.args.push(val);
-										}
+										//}
 									} else {
-										var wlen = word.args.length;
+										var wlen = word.pre_args.length;
 										if(depth<2 || !wlen) {
 											if(depth<curdepth) {
 												// we started adding data so continue
 												// should be same as depth<curdepth
-												atDepth(word.args[wlen-1],depth-1,val);
+												atDepth(word.pre_args[wlen-1],depth-1,val);
 											} else {
-												if(index>0 && (!word.args.length || !(word.args[0] instanceof Array))) {
-													word.args.push(val);1
+												// FIXME:
+												// if there are more lines, arrays need to be created
+												// otherwise it's just a single array
+												// this will also work for words, espec. since 
+												// quotations have to be split
+												// TODO:
+												// when multiple lines at same depth
+												// create multiple arrays
+												// nest further when even more depth
+												// single indent = no nesting?
+												if(index>0 && (!word.pre_args.length || !(word.pre_args[0] instanceof Array))) {
+													word.pre_args.push(val);
 												} else {
-													if(index==0 || !word.args.length) word.args.push([]);
-													wlen = word.args.length;
-													word.args[wlen-1].push(val);
+													if(index==0 || !word.pre_args.length) word.pre_args.push([]);
+													wlen = word.pre_args.length;
+													word.pre_args[wlen-1].push(val);
 												}
 												// FIXME: dirty hack to set parent when it gets lost because first val is text
 												parent = word;
 											}
 										} else {
-											if(index==0) word.args[wlen-1].push([]);
-											atDepth(word.args[wlen-1],depth-1,val);
+											if(index==0) word.pre_args[wlen-1].push([]);
+											atDepth(word.pre_args[wlen-1],depth-1,val);
 										}
 									}
 								}
@@ -366,11 +384,7 @@ define([
 								lang.mixin(context.resolvedWords,a);
 							}
 						} else {
-							if(typeof a == "function" || (typeof a == "object" && a instanceof Object)) {
-								context.resolvedWords[m.word] = a;
-							} else {
-								def.data[m.word] = a;
-							}
+							context.resolvedWords[m.word] = a;
 							modules[toResolve[i].module] = a;
 						}
 					}
@@ -438,7 +452,7 @@ define([
 		parseArgs:function(w,def,context) {
 			var args = [];
 			var checkWord = function(a) {
-				if(typeof a == "object" && a instanceof Word) {
+				if(isWord(a)) {
 					if(context.resolvedWords[a.word]) {
 						var f = context.resolvedWords[a.word];
 						if(!a.args.length) return f;
@@ -453,7 +467,7 @@ define([
 						return parser.parseData(a);
 					}
 				} else {
-					if(typeof a == "object" && a instanceof Array) {
+					if(isWord(a)) {
 						for(var i=0;i<a.length;i++) {
 							a[i] = checkWord(a[i]);
 						}
@@ -469,7 +483,7 @@ define([
 		parseArgsToString:function(w,context,useContextData) {
 			var args = [];
 			var checkWord = function(a){
-				if(typeof a == "object" && a instanceof Word) {
+				if(isWord(a)) {
 					if(context.data[a.word]) {
 						var len = args.length;
 						if(useContextData) {
@@ -490,7 +504,7 @@ define([
 						}
 					}
 				} else {
-					if(typeof a == "object" && a instanceof Array) {
+					if(isWord(a)) {
 						for(var i=0;i<a.length;i++) {
 							a[i] = checkWord(a[i]);
 						}
@@ -507,7 +521,7 @@ define([
 			var args = [];
 			for(var i=0;i<w.args.length;i++) {
 				var a = w.args[i];
-				if(typeof a == "object" && a instanceof Word) {
+				if(isWord(a)) {
 					if(data[a.word]) {
 						var len = args.length;
 						if(len && args[len-1] instanceof Array) {
@@ -524,25 +538,48 @@ define([
 			}
 			return args;
 		},
-		parseWord:function(w,context){
+		parseWord:function(w,context,ptype){
 			var obj = {};
-			var mixed = false;
 			obj[w.word] = {};
+			var mixed = false;
 			var keys = [];
 			var breakonwords = [];
+			var isArgs = true;
+			var isQuotation = false;
+			var isObject = false;
+			var quotation = [];
+			var args = [];
 			// use array for mixed content, object for anything else
 			for(var i=0;i<w.args.length;i++) {
 				var a = w.args[i];
-				
-				var key = a.word;
-				mixed = mixed || keys.indexOf(key)>-1;
-				var res = typeof a == "object" && a instanceof Word ? parser.parseWord(a,context) : a;
-				if(typeof a == "object" && a instanceof Word) {
-					var ar = a.word.split(".");
-					var rw = ar.length>1 ? context.resolvedWords[ar[0]][ar[1]] : context.resolvedWords[a.word];
+				if(isWord(a)) {
+					// - loop all args to find any resolved word
+					// - does parent word expect quotation? is it object, resolvedWord?
+					// - if parent uses args return array
+					// - if parent expects quotation, push it to the stack
+					// - if parent is object, create object
+					// TODO:
+					// collect function objects
+					// check if functions spread over more lines
+					// if so, preserve functions
+					// else build quotation
+					// parse args on same line different than on next lines
+					// check first args on new lines and in quotations (push to stack)
+					// or: what does a block (empty line) mean?
+					// perhaps args should have metadata object too... (or something)
+					// push block args to correct block!
+					// treat args as array as long as not object!
+					// NOTE same line args = args, other lines = pre_args
+					var rw = lang.getObject(a.word,false,context.resolvedWords);
 					if(rw) {
+						isQuotation = true;
+					} else {
+						isObject = true;
+					}
+					var wo = parser.parseWord(a,context,isObject ? "object" : (isQuotation ? "quotation" : "args"));
+					if(isQuotation) {
 						var f = rw;
-						if(!a.args.length) {
+						//if(!a.args.length) {
 							/*if(context.breakonwords && w.word!="bridge") {
 								breakonwords.push({w:a,f:function(stack,context) {
 									return f(stack,[],context);
@@ -552,13 +589,12 @@ define([
 									return stack;
 								};
 							} else {*/
-								res = f;
+								//res = f;
 							//}
-						} else {
-							var wo = parser.parseWord(a,context);
-							var fargs = wo && wo[a.word] ? wo[a.word] : [];
-							fargs = typeof fargs == "object" && fargs instanceof Object && !Object.size(fargs) ? [] : fargs;
-							fargs = fargs instanceof Array ? fargs : [fargs];
+						//} else {
+							//var fargs = wo && wo[a.word] ? wo[a.word] : {};
+							//fargs = typeof fargs == "object" && fargs instanceof Object && !Object.size(fargs) ? [] : fargs;
+							//fargs = fargs instanceof Array ? fargs : [fargs];
 							/*if(context.breakonwords && w.word!="bridge") {
 								mixed = true;
 								breakonwords.push({w:a,f:function(stack,context) {
@@ -568,39 +604,80 @@ define([
 									console.log(arguments.caller)
 									return stack.concat(fargs.slice());
 								}
-							} else {*/
+							} else {
 								res = function(stack,args,context) {
 									return f(stack,fargs.slice(),context);
-								};
+								};*/
+							var fc = function(f,pre_args,post_args) {
+								return function(stack,args,context) {
+									stack = stack.concat(pre_args);
+									stack = f(stack,post_args,context);
+									return stack.concat(post_args);
+								}
+							}
+							if(!a.args.length) {
+								quotation.push(f);
+							} else {
+								quotation.push(fc(f,wo.pre_args,wo.args));
+							}
 							//}
-						}
+						//}
 					}
 				}
-				mixed = mixed || (typeof res != "object" && w.args.length > 1);
-				
-				keys.push(key);
-				
-				if(mixed) {
-					if(!(obj[w.word] instanceof Array)) {
-						if(typeof obj[w.word] != "object") {
-							obj[w.word] = [obj[w.word]];
-						} else {
-							var o = lang.clone(obj[w.word]);
-							obj[w.word] = [];
-							for(var k in o) {
-								var newo = {};
-								newo[k] = o[k];
-								obj[w.word].push(newo);
+				if(!isQuotation && (isObject || isArgs)) {
+					var key = a.word;
+					if(key) {
+						mixed = mixed || keys.indexOf(key)>-1;
+						keys.push(key);
+					}
+					var res = isWord(a) && wo ? (wo.type == "object" ? wo.pre_args[0] : wo.args[0]) : a;
+					mixed = mixed || (typeof res != "object" && w.args.length > 1);
+					
+					if(mixed) {
+						if(!(obj[w.word] instanceof Array)) {
+							if(typeof obj[w.word] != "object") {
+								obj[w.word] = [obj[w.word]];
+							} else {
+								var o = lang.clone(obj[w.word]);
+								obj[w.word] = [];
+								for(var k in o) {
+									var newo = {};
+									newo[k] = o[k];
+									obj[w.word].push(newo);
+								}
 							}
 						}
+						obj[w.word].push(res);
+					} else {
+						obj[w.word] = (typeof res == "object" && res instanceof Object) ? lang.mixin(obj[w.word],res) : res;
 					}
-					obj[w.word].push(res);
-				} else {
-					obj[w.word] = (typeof res == "object" && res instanceof Object) ? lang.mixin(obj[w.word],res) : res;
 				}
 			}
+			var pre_args = [];
+			obj = ptype && ptype!="quotation" ? obj : obj[w.word];
+			var args = obj instanceof Array ? obj : (obj instanceof Object && Object.size(obj)==0 ? [] : [obj]);
+			if(context.DEFINE[w.word] && context.DEFINE[w.word].args2stack) {
+				pre_args = args.splice(0,context.DEFINE[w.word].args2stack);
+			}
+			if(isObject) {
+				pre_args = pre_args.concat(args.splice(0,args.length));
+			}
+			if(isQuotation) {
+				pre_args = pre_args.concat(args.splice(0,args.length));
+				var q = quotation.length == 1 ? quotation.pop() : function(stack,args,context) {
+					quotation.forEach(function(q){
+						stack = q(stack,args,context);
+					});
+					return stack;
+				};
+				pre_args.push(q);
+			}
 			//obj.breakonwords = breakonwords;
-			return obj;
+			return {
+				type: isObject ? "object" : (isQuotation ? "quotation" : "args"),
+				pre_args:pre_args,
+				args:args
+			};
 		},
 		words:function(context) {
 			var f = function(word){
@@ -619,10 +696,10 @@ define([
 								stripSingles(w,context);
 								//args = parser.parseArgs(w,def,context);
 								var wo = parser.parseWord(w,context);
-								var args = wo && wo[w.word] ? wo[w.word] : [];
-								args = typeof args == "object" && args instanceof Object && !Object.size(args) ? [] : args;
-								args = args instanceof Array ? args : [args];
-								
+								//var args = wo && wo[w.word] ? wo[w.word] : [];
+								//args = typeof args == "object" && args instanceof Object && !Object.size(args) ? [] : args;
+								//args = args instanceof Array ? args : [args];
+								var args = wo.args;
 								if(context.breakonwords) {
 									var f = function(word,args){
 										return function(stack,context) {
@@ -631,21 +708,22 @@ define([
 										}
 									};
 									breakonwords.push({w:w,f:f(w.word,args)});
-									breakonwords = breakonwords.concat(wo.breakonwords);
+									//breakonwords = breakonwords.concat(wo.breakonwords);
 								} else {
-									var f = function(word){
+									var f = function(word,pre_args,args){
 										return function(stack,args,context) {
+											stack = stack.concat(pre_args);
 											stack = context.resolvedWords[word](stack,args,context,word);
-											return stack;
+											return stack.concat(args);
 										}
 									};
-									stack = f(w.word)(stack,args,context);
+									stack = f(w.word,wo.pre_args,wo.args)(stack,args,context);
 								}
 							}
 						});
 					});
 					if(context.breakonwords) context.breakonwords = breakonwords.concat(context.breakonwords);
-					return stack.concat(args);
+					return stack.concat(args.splice(0,args.length));
 				}
 			};
 			for(var k in context.DEFINE) {
