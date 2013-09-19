@@ -1,12 +1,9 @@
 define([
 	"dojo/_base/lang",
-	"acuna/kernel/concat",
 	"dojo/dom"
 ],
-	function(lang, concat, ddom){
+	function(lang, ddom){
 	
-	"use strict";
-
 	var dom = lang.getObject("acuna.dom", true);
 	
 	dom.byId = function(stack,args,context){
