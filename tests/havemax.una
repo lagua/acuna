@@ -1,0 +1,134 @@
+define
+	"have max order a beer"
+
+use "acuna/kernel"
+use "acuna/kernel/math"
+use "acuna/markup/html" "html"
+use "acuna/style/create" "createStyle"
+use "acuna/markup/@keyframes" "@keyframes"
+use "dojo/dom-construct" "domConstruct"
+use "dojo/dom-style" "domStyle"
+use  "acuna/kernel/native!setTimeout" "setTimeout"
+
+bar max enter 2.5 order-a-beer 8 exit 11 hide
+
+
+define "bar"
+
+html
+	body
+		div
+			@id "bar"
+			img
+				@src "bar.png"
+
+
+define "max"
+	"add animations, create max+sprite"
+	"swap at end to have max on the stack"
+
+@keyframes "mywalk"
+	from
+		left "0px"
+		top "100px"
+	to
+		left "150px"
+		top "90px"
+
+@keyframes "mycontinue"
+	from
+		left "150px"
+		top "90px"
+	to
+		left "400px"
+		top "100px"
+
+@keyframes "mysprite"
+	from
+		background-position "0px 0px"
+	to
+		background-position "-320px 0px"
+
+createElement "div"
+	id "max"
+dup
+setStyleObj
+	position "absolute"
+	top "90px"
+	left "150px"
+	animation "mywalk 2s linear"
+	animationPlayState "paused"
+
+createElement "div"
+	id "max-sprite"
+setStyleObj
+	backgroundImage "url(max.png)"
+	backgroundRepeat "repeat-x"
+	width "80px"
+	height "90px"
+	animation "mysprite .5s steps(4) 4"
+swap
+
+
+define "enter"
+
+setStyleObj
+	animationPlayState "running"
+
+
+define "order-a-beer"
+	"we should update sprite, but wait count is on stack, so swapd"
+
+swapd wait
+	setStyleObj
+		animationName "none"
+		backgroundPosition "-320px 0"
+
+
+define "exit"
+
+wait
+	setStyleObj
+		animation "mysprite .5s steps(4) 6"
+	swap
+	setStyleObj
+		animation "mycontinue 3s linear"
+
+
+define "hide"
+
+wait
+	setStyleObj
+		display "none"
+
+
+define "createElement" 2
+
+swapd swap bridge
+	3 domConstruct.create
+
+
+define "setStyleObj" 2
+
+dupd bridge
+	2 domStyle.set
+pop
+
+
+define "swapd"
+
+dip
+	swap
+
+
+define "dupd"
+
+dip
+	dup
+
+
+define "wait"
+
+swap 1000 * bridge
+	2 setTimeout
+pop

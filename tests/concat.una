@@ -1,8 +1,8 @@
 DEFINE
     "Concatenative test"
 
-USE "acuna/kernel/concat"
-USE "acuna/kernel/concat/math"
+USE "acuna/kernel"
+USE "acuna/kernel/math"
 
 3 4 max 7 neg dbl +
 
