@@ -1,7 +1,7 @@
 define
     "Request test with bridge to native alert"
 
-use "acuna/kernel/concat"
+use "acuna/kernel"
 use "dojo/request" "drequest"
 use "dojo/when" "dwhen"
 use "acuna/kernel/native!alert" "nalert"
@@ -11,22 +11,19 @@ request "test.una" then
     alert
 
 
-define "request"
-    "#args2stack=1"
+define "request" 1
 
 bridge
     1 drequest
 
 
-define "then"
-    "#args2stack=3"
+define "then" 3
 
 bridge
     dwhen
 
 
-define "alert"
-    "#args2stack=1"
+define "alert" 1
 
 bridge
     nalert
