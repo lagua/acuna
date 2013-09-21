@@ -19,13 +19,17 @@ define([
 		return n==="true" || n==="false";
 	};
 	
-	var isNumericOrBool = function(n) {
-		return isBool(n) || isNumeric(n);
+	var isData = function(n) {
+		return isBool(n) || isNumeric(n) || isString(n);
 	};
 	
 	var isNumeric = function(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
+	
+	var isString = function(n) {
+		return n.indexOf("\"") > -1;
+	}
 	
 	var isWord = function(a) {
 		return typeof a == "object" && a instanceof Word;
@@ -98,7 +102,7 @@ define([
 					// DEFINE should only happen once per block
 					// in other words: each block MUST start with DEFINE
 					if(first instanceof Array && first.length) first = first[0]; 
-					var target = first ? (first.toUpperCase()=="DEFINE" || first.toUpperCase()=="USE" ? first.toUpperCase() : (first.indexOf("\"")==-1 && !isNumericOrBool(first) ? "words" : "DEFINE")) : "DEFINE";
+					var target = first ? (first.toUpperCase()=="DEFINE" || first.toUpperCase()=="USE" ? first.toUpperCase() : (!isData(first) ? "words" : "DEFINE")) : "DEFINE";
 					// word block
 					var curdepth;
 					var endword;
@@ -168,16 +172,24 @@ define([
 						var last = parts.pop();
 						parts.push(last);
 						array.forEach(parts,function(p,index){
+							var wordAfter = function(){
+								if(target.toUpperCase() === "DEFINE" || target.toUpperCase() === "USE") return false;
+								var rest = parts.slice(index+1,index.length);
+								for(var i=0;i<rest.length;i++) {
+									if(!isData(rest[i])) return true;
+								}
+							};
 							// check if it is a number or string
-							if(p.indexOf("\"")==-1 && !isNumericOrBool(p)) {
+							if(!isData(p)) {
 								if(p.toUpperCase()!="USE" && context.resolvedWords[p]) {
 									word = context.resolvedWords[p];
 								} else {
 									word = new Word(p,defno,blockno,lineno,index,depth,[]);
 								}
-								endword = index === parts.length-1 || target.toUpperCase() === "DEFINE";
+								
+								endword = index === parts.length-1 || target.toUpperCase() === "DEFINE" || !wordAfter();
 								var leftword = parts[index-1] ? parts[index-1] : null;
-								leftword = leftword && lineno<lines.length-1 && leftword.indexOf("\"")==-1 && !isNumericOrBool(leftword);
+								leftword = leftword && lineno<lines.length-1 && !isData(leftword);
 								if(!leftword && parent && depth>curdepth) {
 									//parent = endword;
 									parent.pre_args.push(word);
@@ -223,7 +235,7 @@ define([
 										}
 										ar.push(val);
 									}
-									if(!endword) {
+									if(lineno==word.line) {
 										//if(word.parent && lineno>word.line && word.depth==depth) {
 										//	word.parent.pre_args.push(val);
 										//} else if(lineno>word.line){
@@ -233,6 +245,28 @@ define([
 										//}
 									} else {
 										var wlen = word.pre_args.length;
+										var wdepth = depth - word.depth;
+										var wline = lineno - word.line;
+										if(wdepth>0 && !wordAfter()) {
+											var v = word.pre_args[wline-1];
+											// if there's a value on the pos but its not an array
+											if(v && !(v instanceof Array)) {
+												// if last is not array, add it
+												if(word.pre_args[wlen-1] instanceof Array) {
+													word.pre_args[wlen-1].push(val);
+												} else {
+													word.pre_args.push([val]);
+												}
+											} else if(v && v instanceof Array) {
+												word.pre_args[wline-1].push(val);
+											} else {
+												word.pre_args[wline-1] = [val];
+											}
+										} else {
+											word.pre_args.push(val);
+										}
+										parent = word;
+										/*
 										if(depth<2 || !wlen) {
 											if(depth<curdepth) {
 												// we started adding data so continue
@@ -263,6 +297,7 @@ define([
 											if(index==0) word.pre_args[wlen-1].push([]);
 											atDepth(word.pre_args[wlen-1],depth-1,val);
 										}
+										*/
 									}
 								}
 							}
