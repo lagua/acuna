@@ -8,12 +8,18 @@ use "acuna/style/create" "createStyle"
 use "acuna/markup/@keyframes" "@keyframes"
 use "dojo/dom-construct" "domConstruct"
 use "dojo/dom-style" "domStyle"
+use "dojo/on" "don"
 use  "acuna/kernel/native!setTimeout" "setTimeout"
 
-bar max enter 2.5 order-a-beer 8 exit 11 hide
+bar max swap on "click"
+	enter 2 order-a-beer 8 exit 11 hide
 
 
 define "bar"
+
+createStyle "#bar"
+	perspective "800px"
+	transform-style "preserve-3d"
 
 html
 	body
@@ -58,6 +64,7 @@ setStyleObj
 	left "150px"
 	animation "mywalk 2s linear"
 	animationPlayState "paused"
+	transform "rotateX(20DEG)"
 
 createElement "div"
 	id "max-sprite"
@@ -67,11 +74,15 @@ setStyleObj
 	width "80px"
 	height "90px"
 	animation "mysprite .5s steps(4) 4"
+	animationPlayState "paused"
 swap
 
 
-define "enter"
+define "enter" 
 
+setStyleObj
+	animationPlayState "running"
+swap
 setStyleObj
 	animationPlayState "running"
 
@@ -127,8 +138,21 @@ dip
 	dup
 
 
+define "dupdd"
+
+dip
+	dupd
+
+
 define "wait"
 
 swap 1000 * bridge
 	2 setTimeout
+pop
+
+
+define "on"
+
+dupdd bridge
+	3 don
 pop
