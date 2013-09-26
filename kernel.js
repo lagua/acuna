@@ -7,15 +7,16 @@ define(["dojo/_base/lang","dojo/_base/array"],
 		bridge: function(stack,args,context){
 			// the function to bridge
 			var f = stack.pop();
-			var l = stack.pop();
+			var l = args.shift();
+			var useargs = args.shift();
 			var fargs = stack.splice(-l);
 			var lstack = stack.slice();
 			fargs = fargs.map(function(_){
 				if(typeof _ === "function") {
 					var f = function(_){
 						return function() {
-							lstack = _(lstack,[],context);
-							//return lstack.concat(Array.prototype.slice.call(arguments));
+							var args = useargs ? Array.prototype.slice.call(arguments) : [];
+							lstack = _(lstack,args,context);
 						}
 					};
 					_ = f(_);
