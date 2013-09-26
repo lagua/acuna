@@ -94,7 +94,7 @@ define([
 			defblocks.forEach(function(defblock,defno){
 				var word, def;
 				// search each block in una string
-				defblock.split(/(?:\n){2,}?/g).forEach(function(block,blockno,blocks){
+				defblock.split(/(?!\n{2,}\t)\n{2,}?/g).forEach(function(block,blockno,blocks){
 					var words = [];
 					var first = block.match(/^\S+/);
 					// DEFINE should only happen once per block
@@ -102,6 +102,7 @@ define([
 					if(first instanceof Array && first.length) first = first[0]; 
 					var target = first && first.toUpperCase()=="DEFINE" || first.toUpperCase()=="USE" ? first.toUpperCase() : "";
 					// word block
+					var quots = [];
 					if(target=="DEFINE" && blockno==0) {
 						var ar = block.split(/\n/);
 						var l = ar.shift();
@@ -130,10 +131,11 @@ define([
 							context.DEFINE[useWord] = def = parent = word;
 						}
 					}
+					if(!block) return;
 					if(blockno>word.block) word = def;
 					var parent;
 					// search each line
-					var quots = block.split(/\n/).map(function(line,lineno,lines){
+					quots = block.split(/\n/).map(function(line,lineno,lines){
 						// capture nesting
 						var tmatch = line.match(/^\t+/g);
 						var tabs = tmatch && tmatch.length>0 ? tmatch[0] : null;
@@ -168,11 +170,16 @@ define([
 					});
 					var quot = [];
 					quots.forEach(function(q,i){
+						if(!q) {
+							quots[i-1].quot.slice(-1)[0].comma = true;
+							return;
+						}
 						if(!q.depth) {
 							quot = quot.concat(q.quot);
 						} else {
 							for(var j=i-1;j>=0;j--) {
 								var tq = quots[j];
+								if(!tq) continue;
 								if(tq.depth==q.depth-1) {
 									if(tq.word) {
 										tq.word.args.push(q.quot);
@@ -458,10 +465,11 @@ define([
 			}
 			return args;
 		},
-		parseQuot:function(quot,obj,context){
+		parseQuot:function(quot,o,context){
 			var mixed = false;
-			var isQuotation = false;
-			var isObject = false;
+			var type = o.type;
+			var obj = o.obj;
+			var quotation = [];
 			var newo;
 			for(var i=0;i<quot.length;i++) {
 				var a = quot[i];
@@ -484,8 +492,9 @@ define([
 					// treat args as array as long as not object!
 					// NOTE same line args = args, other lines = pre_args
 					var rw = lang.getObject(a.word,false,context.resolvedWords);
-					var wo = parser.parseWord(a,context);
+					var wo = parser.parseWord(a,context,true);
 					if(rw) {
+						type = "quot";
 						var f = rw;
 						//if(!a.args.length) {
 							/*if(context.breakonwords && w.word!="bridge") {
@@ -516,23 +525,35 @@ define([
 								res = function(stack,args,context) {
 									return f(stack,fargs.slice(),context);
 								};*/
-							var fc = function(f,args,post_args) {
-								return function(stack,args,context) {
-									stack = stack.concat(args);
-									stack = f(stack,post_args,context);
-									return stack.concat(post_args);
-								}
-							}
 							if(!a.args.length) {
-								quotation.push(f);
+								quotation.push({w:a.word,f:f});
 							} else {
-								quotation.push(fc(f,wo.args,wo.args));
+								var args = wo.args.slice(), pre_args = [], post_args = [];
+								while(args.length) {
+									var arg = args.pop();
+									if(typeof arg == "object" || typeof arg == "function") {
+										pre_args.unshift(arg);
+									} else {
+										post_args.unshift(arg);
+									}
+								}
+								var fc = function(f,pre_args,args) {
+									return function(stack,fargs,context) {
+										stack = stack.concat(pre_args);
+										stack = f(stack,args,context);
+										return stack.concat(args);
+									}
+								}
+								//var args2stack = context.DEFINE[a.word] && context.DEFINE[a.word].args2stack;
+								//if(args2stack) pre_args = post_args.splice(0,args2stack).concat(pre_args);
+								quotation.push({w:a.word,f:fc(f,pre_args,post_args)});
 							}
 							//}
 						//}
 					} else {
+						type = "object";
 						var key = a.word;
-						if((obj instanceof Array && obj.length) || (key && obj[key])) mixed = true;
+						mixed = mixed || (obj instanceof Array && obj.length) || (key && obj[key]);
 						
 						var res = wo.args.length > 1 ? wo.args : wo.args[0];
 						
@@ -555,46 +576,53 @@ define([
 						}
 					}
 				} else {
-					mixed = true;
 					if(!(obj instanceof Array)) obj = [obj];
 					obj.push(a);
 				}
 			}
-			return obj;
+			if(quotation.length) {
+				var f = function(pre_args) {
+					return function(stack,args,context) {
+						//stack = stack.concat(pre_args);
+						quotation.forEach(function(q){
+							stack = q.f(stack,args,context);
+						});
+						return stack;
+					};
+				};
+				var q = quotation.length == 1 ? quotation.pop().f : f();
+				obj.push(q);
+			}
+			return {obj:obj,type:type};
 		},
-		parseWord:function(w,context,ptype){
-			var obj = [];
+		parseWord:function(w,context,child){
+			var obj = {obj:[],type:"value"};
 			var breakonwords = [];
 			var quotation = [];
-			var args = [];
+			var args = [], values = [];
 			// use array for mixed content, object for anything else
 			while(w.args.length) {
 				var a = w.args.shift();
 				// quotation
 				if(a instanceof Array) {
 					obj = parser.parseQuot(a,obj,context);
+					if(obj.type== "value" && obj.obj.length) {
+						args.push(obj.obj);
+						obj.obj = [];
+					}
 				} else {
 					args.push(a);
 				}
 			}
-			if(!(obj instanceof Array)|| obj.length) args.push(obj);
+			if(obj.type=="quot") {
+				if(obj.obj.length) args = args.concat(obj.obj);
+			} else if(obj.type=="value") {
+				if(values.length) args.push(values);
+			} else {
+				if(!(obj.obj instanceof Array) || obj.obj.length) args.push(obj.obj);
+			}
+			w.type = obj.type;
 			w.args = args;
-			/*if(context.DEFINE[w.word] && context.DEFINE[w.word].args2stack) {
-				pre_args = args.splice(0,context.DEFINE[w.word].args2stack);
-			}
-			if(isObject) {
-				pre_args = pre_args.concat(args.splice(0,args.length));
-			}
-			if(isQuotation) {
-				pre_args = pre_args.concat(args.splice(0,args.length));
-				var q = quotation.length == 1 ? quotation.pop() : function(stack,args,context) {
-					quotation.forEach(function(q){
-						stack = q(stack,args,context);
-					});
-					return stack;
-				};
-				pre_args.push(q);
-			}*/
 			//obj.breakonwords = breakonwords;
 			return w;
 		},
@@ -604,10 +632,8 @@ define([
 				return function(stack,args,context){
 					// TODO when to clear the stack?
 					stack = def.args.length ? stack.concat(def.args[0]) : stack;
+					if(def.args2stack) stack = stack.concat(args.splice(0,def.args2stack));
 					// args2stack should be a hint, because args are not passed around!
-					if(def.args2stack) {
-						stack = stack.concat(args.splice(0,def.args2stack));
-					}
 					var breakonwords = [];
 					array.forEach(def.blocks,function(block) {
 						array.forEach(block.quot,function(w) {
@@ -623,11 +649,14 @@ define([
 								var args = w.args.slice(), pre_args = [], post_args = [];
 								while(args.length) {
 									var a = args.pop();
-									if(typeof a == "object") {
+									if(typeof a == "object" || typeof a == "function") {
 										pre_args.unshift(a);
 									} else {
 										post_args.unshift(a);
 									}
+								}
+								if(context.DEFINE[w.word] && context.DEFINE[w.word].args2stack) {
+									pre_args = post_args.splice(0,context.DEFINE[w.word].args2stack).concat(pre_args);
 								}
 								if(context.breakonwords) {
 									var f = function(word,args){
