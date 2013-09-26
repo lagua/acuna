@@ -28,22 +28,20 @@ define([ "dojo/_base/lang","dojo/json" ], function(lang,JSON) {
 
 	markup["@keyframes"] = function(stack, args, context) {
 		var x = stack.pop();
+		var r = args.shift();
 		var step = "{ \n";
-		while (x instanceof Object) {
-			for(var k in x) {
-				step += k+" ";
-				step += JSON.stringify(x[k],function(key, val){
-					if(key) {
-						return val + ";";
-					}
-					return val;
-				},2).replace(/\"|,/g,"")+"\n";
-			}
-			x = stack.pop();
+		for(var k in x) {
+			step += k+" ";
+			step += JSON.stringify(x[k],function(key, val){
+				if(key) {
+					return val + ";";
+				}
+				return val;
+			},2).replace(/\"|,/g,"")+"\n";
 		}
 		step += "}";
-		var rule = find(x, context);
-		if(!rule) insert(x + " " + step, context);
+		var rule = find(r, context);
+		if(!rule) insert(r + " " + step, context);
 		return stack;
 	};
 
