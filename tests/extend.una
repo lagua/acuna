@@ -1,0 +1,29 @@
+define
+	"This is a test"
+	"more comments"
+
+use "acuna/markup/html" "html"
+use "acuna/widget/query" "query"
+use "acuna/widget/extend" "extend"
+use "acuna/widget/set" "set"
+use "acuna/kernel"
+use "dijit/form/Button" "Button"
+
+html
+	head
+		link
+			@rel "stylesheet"
+			@href "../../dijit/themes/claro/claro.css"
+	body
+		@class "claro"
+		div
+			@id "app"
+			"click me!"
+		div
+			@id "reset"
+			"reset me!"
+
+query "#app"
+extend
+    Button
+set "label" "test"

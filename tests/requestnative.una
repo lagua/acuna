@@ -8,22 +8,23 @@ use "acuna/kernel/native!alert" "nalert"
 
 request "test.una" then
     alert
+
     alert
 
 
 define "request" 1
 
-bridge
-    1 drequest
+bridge 1
+    drequest
 
 
 define "then" 3
 
-bridge
-    3 dwhen
+bridge 3 true
+    dwhen
 
 
 define "alert" 1
 
-bridge
-    1 nalert
+bridge 1
+    nalert
