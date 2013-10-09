@@ -1,9 +1,9 @@
 define(["dojo/_base/lang","dojo/_base/array"],
 	function(lang,array){
 	
-	var concat = lang.getObject("acuna.kernel.concat", true);
+	var kernel = lang.getObject("acuna.kernel", true);
 
-	lang.mixin(concat, {
+	lang.mixin(kernel, {
 		bridge: function(stack,args,context){
 			// the function to bridge
 			var f = stack.pop();
@@ -15,7 +15,7 @@ define(["dojo/_base/lang","dojo/_base/array"],
 				if(typeof _ === "function") {
 					var f = function(_){
 						return function() {
-							var args = useargs ? Array.prototype.slice.call(arguments) : [];
+							if(useargs) lstack = lstack.concat(Array.prototype.slice.call(arguments));
 							lstack = _(lstack,args,context);
 						}
 					};
@@ -85,5 +85,5 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			return stack;
 		}
 	});
-	return concat;
+	return kernel;
 });
