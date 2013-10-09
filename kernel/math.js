@@ -1,9 +1,9 @@
 define(["dojo/_base/lang","dojo/_base/array"],
 	function(lang,array){
 	
-	var cmath = lang.getObject("acuna.kernel.concat.math", true);
+	var matho = lang.getObject("acuna.kernel.math", true);
 
-	lang.mixin(cmath, {
+	lang.mixin(matho, {
 		neg:function(stack,args,context){
 			stack.push(-stack.pop());
 			return stack;
@@ -11,7 +11,7 @@ define(["dojo/_base/lang","dojo/_base/array"],
 	});
 	var operators = ["+","-","*","/","%"];
 	array.forEach(operators,function(o){
-		cmath[o] = function(stack,args,context) {
+		matho[o] = function(stack,args,context) {
 			var x = stack.pop();
 			var y = stack.pop();
 			stack.push(eval("y"+o+"x"));
@@ -23,23 +23,23 @@ define(["dojo/_base/lang","dojo/_base/array"],
 		if(typeof Math[k] == "function") {
 			var len = Math[k].length;
 			if(len==1){
-				cmath[k] = function(stack,args,context) {
+				matho[k] = function(stack,args,context) {
 					stack.push(Math[k](stack.pop()));
 					return stack;
 				}
 			} else if(len==2){
-				cmath[k] = function(stack,args,context) {
+				matho[k] = function(stack,args,context) {
 					var x = Math[k](stack.pop(),stack.pop());
 					stack.push(x);
 					return stack;
 				}
 			}
 		} else {
-			cmath[k] = function(stack,args,context) {
+			matho[k] = function(stack,args,context) {
 				stack.push(Math[k]);
 				return stack;
 			}
 		}
 	});
-	return cmath;
+	return matho;
 });
