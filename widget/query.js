@@ -3,28 +3,26 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/selector/_loader!default", 
 	
 	"use strict";
 
-	var acuna = lang.getObject("acuna", true);
+	var widget = lang.getObject("acuna.widget", true);
 	
 	var query = function(stack,args,context) {
 		var x = stack.pop();
-		x = x.nodeName && x.nodeName.toLowerCase()=="body" ? x : document.body;
 		var nodelist = defaultEngine(args.shift(),x);
 		var widgetlist = [];
 		array.forEach(nodelist,function(node){
 			var widget = registry.byNode(node);
+			if(!widget && node.id) widget = registry.byId(node.id);
 			if(!widget) {
-				widget = new _WidgetBase({
-					id:node.id
-				},node);
+				widget = new _WidgetBase(null,node);
 				widget.startup();
 			}
 			widgetlist.push(widget);
 		});
-		stack = stack.concat(widgetlist);
+		stack.push(widgetlist);
 		return stack;
 	};
 	
-	acuna.query = query;
+	widget.query = query;
 	
 	return query;
 	
