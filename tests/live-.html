@@ -204,7 +204,7 @@
 				//Firebug.document = Firebug.browser.document = context.document;
 				var seen = [];
 				byId("context1").innerHTML = syntaxHighlight(JSON.stringify(context,function(key, val) {
-					if (typeof val == "object") {
+					if(typeof val == "object" && !(val instanceof Array)) {
 						if(["window","document","breakwonwords"].indexOf(key) > -1) return;
 						if(isNode(val)) return "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "");
 						if(seen.indexOf(val) > -1) return;
@@ -306,6 +306,22 @@
 					module:true
 				});
 			};
+			var tocss = function(){
+				var b = byId("body");
+				var file = byId("file").value;
+				var direct = byId("text").value;
+				var context = {
+					DEFINE:{},
+					modules:{},
+					resolvedWords:{},
+					data:{},
+					blocks:{},
+					stack:[]
+				};
+				parser.toCSS(parser.parse(context,direct,file,true),function(css){;
+					b.contentDocument.body.innerHTML = "<pre>"+css+"</pre>";
+				});
+			};
 			var load = function(){
 				var file = document.getElementById("file").value;
 				request.get(file).then(function(res){
@@ -321,6 +337,7 @@
 				on(byId("load"),"click",load);
 				on(byId("show"),"click",show);
 				on(byId("tojs"),"click",tojs);
+				on(byId("tocss"),"click",tocss);
 				on(byId("go"),"click",function(){
 					go();
 				});
@@ -344,6 +361,7 @@
 				<button id="go">Go</button>
 				<button id="next">First word</button>
 				<button id="tojs">To JS</button>
+				<button id="tocss">To CSS</button>
 				<datalist id="files">
 					<option>requestnative.una</option>
 				   <option>concat.una</option>
