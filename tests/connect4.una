@@ -1,0 +1,220 @@
+define
+	"a simple connect4 game"
+
+use "acuna/kernel/extended"
+use "acuna/kernel/array"
+use "acuna/kernel/math"
+use "dojo/dom-construct" "domConstruct"
+
+board
+4 1 insert
+3 2 insert
+3 1 insert
+2 2 insert
+2 1 insert
+1 2 insert
+2 1 insert
+1 2 insert
+1 1 insert
+6 2 insert
+1 1 insert
+checkfinished
+
+
+define "board"
+	"set up the board"
+
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+
+
+define "insert"
+	"insert player at column"
+	"leave correct number on stack for each run of either set/get"
+
+bury
+6 for
+	dup bury4 swap dup bury4
+	get_at2
+	0 eq
+	if
+		bury4 dig set_at2 leave
+	
+		dig pop swap
+
+
+define "evaluate" 
+	"evaluate the board status"
+
+128 swap 6 for
+	7 for
+		prepareValue get2 bury4 get_at2
+		1 eq
+		if
+			bury4 bury - bury
+
+			bury4 bury + bury
+	pop
+swap
+
+
+define "prepareValue"
+    "get the value from evaluationTable"
+
+get2 get2 evaluationTable bury get_at2 bury5 pop
+
+
+define "evaluationTable"
+	"this will be used to evaluate the state of the board"
+
+3 4 5 7 5 4 3
+4 6 8 10 8 6 4
+5 8 11 13 11 8 5
+5 8 11 13 11 8 5
+4 6 8 10 8 6 4
+3 4 5 7 5 4 3
+
+
+define "checkfinished"
+	"note: last get3 is not needed as the iterator may be consumed"
+	"instead we pop it at last line of inner for"
+
+6 for
+	4 for
+		get2 bury4 dup bury4
+		get_at2
+		dup dip
+			0 ne bury4
+		dup dip
+			1 checklast
+		dup dip
+			2 checklast
+		dup dip
+			3 checklast
+		dig5 if
+			bury4 bury4 pop leave
+
+			pop bury pop
+	pop haswinner
+	if
+		leave
+
+		null
+haswinner
+if
+	null
+
+	3 for
+		7 for
+			get2 bury4 dup bury4
+			get_at2
+			dup dip
+				0 ne bury4
+			dup dip
+				1 checkfirst
+			dup dip
+				2 checkfirst
+			dup dip
+				3 checkfirst
+			dig5 if
+				bury4 bury4 pop leave
+	
+				pop bury pop
+		pop haswinner
+		if
+			leave
+	
+			null
+haswinner
+if
+	null
+
+	3 for
+		4 for
+			get2 bury4 dup bury4
+			get_at2
+			dup dip
+				0 ne bury4
+			dup dip
+				1 checkboth
+			dup dip
+				2 checkboth
+			dup dip
+				3 checkboth
+			dig5 if
+				bury4 bury4 pop leave
+	
+				pop bury pop
+		pop haswinner
+		if
+			leave
+	
+			null
+haswinner
+if
+	null
+
+	3 for
+		3 +
+		4 for
+			get2 bury4 dup bury4
+			get_at2
+			dup dip
+				0 ne bury4
+			dup dip
+				1 checkbothr
+			dup dip
+				2 checkbothr
+			dup dip
+				3 checkbothr
+			dig5 if
+				bury4 bury4 pop leave
+	
+				pop bury pop
+		pop haswinner
+		if
+			leave
+	
+			null
+
+
+define "checklast"
+	"increment 2nd iterator"
+
+dip
+	bury4 get3 get3
++ get_at2 dig5 eq dig5 and bury4
+
+
+define "checkfirst"
+	"increment 1st iterator"
+
+dip
+	bury4 get3
++ get3 get_at2 dig5 eq dig5 and bury4
+
+
+define "checkboth"
+	"increment both iterators"
+
+dip
+	bury4
+dup get5 + swap get4 + get_at2 dig5 eq dig5 and bury4
+
+
+define "checkbothr"
+	"decrement 1st, increment 2nd iterator"
+
+dip
+	bury4
+dup get5 swap - swap get4 + get_at2 dig5 eq dig5 and bury4
+
+
+define "haswinner"
+	"check if value is player, not board"
+
+dup 1 eq swap dup 2 eq dig or
