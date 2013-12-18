@@ -2,6 +2,7 @@ define(["dojo/_base/lang","dojo/_base/array"],
 	function(lang,array){
 	
 	var kernel = lang.getObject("acuna.kernel", true);
+	var leave = false;
 
 	lang.mixin(kernel, {
 		bridge: function(stack,args,context){
@@ -61,6 +62,11 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			stack.push(t);
 			return stack;
 		},
+		quot:function(stack,args,context) {
+			var f = args.length ? args.shift() : stack.pop();
+			stack.push(f);
+			return stack;
+		},
 		compose:function(stack,args,context){
 			// quotation
 			// if quotation in args use it!
@@ -73,15 +79,57 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			f();
 			return stack;
 		},
-		"if":function(stack,args,context){
-			var b = stack.pop();
-			var t = args.shift();
-			var f = args.shift();
-			stack.push(b ? t : f);
+		leave:function(stack,args,context){
+			leave = true;
 			return stack;
 		},
+		"for":function(stack,args,context) {
+			var b = stack.pop();
+			var z = stack.pop();
+			for(var i=0;i<z;i++) {
+				stack.push(i);
+				stack = b(stack,args,context);
+				if(leave) {
+					leave = false;
+					break;
+				}
+			}
+			return stack;
+		},
+		"throw":function(stack,args,context){
+			alert("error: "+stack.pop());
+			return stack;
+		},
+		"if":function(stack,args,context){
+			var c = [];
+			c[1] = stack.pop();
+			c[0] = stack.pop();
+			var b = stack.pop();
+			return c[+b](stack,args,context);
+		},
 		"eq":function(stack,args,context){
-			stack.push(stack.pop() == stack.pop());
+			var x = stack.pop(), y = stack.pop();
+			stack.push(x === y);
+			return stack;
+		},
+		"ne":function(stack,args,context){
+			var x = stack.pop(), y = stack.pop();
+			stack.push(x !== y);
+			return stack;
+		},
+		"gt":function(stack,args,context){
+			var x = stack.pop(), y = stack.pop();
+			stack.push(x > y);
+			return stack;
+		},
+		"and":function(stack,args,context){
+			var x = stack.pop(), y = stack.pop();
+			stack.push(x && y);
+			return stack;
+		},
+		"or":function(stack,args,context){
+			var x = stack.pop(), y = stack.pop();
+			stack.push(x || y);
 			return stack;
 		}
 	});
