@@ -7,6 +7,55 @@ define(["dojo/_base/lang", "dojo/_base/array"],
 
 	kernel.array = {};
 	lang.mixin(kernel.array, {
+		count: function(stack,args,context) {
+			var l = stack.pop();
+			return stack.concat([l,l.length]);
+		},
+		get_at:function(stack,args,context) {
+			var l = stack.pop();
+			var p = args.shift();
+			return stack.concat([l,l[p]]);
+		},
+		set_at:function(stack,args,context) {
+			var p,x;
+			if(args.length) {
+				p = args.shift();
+				x = args.shift();
+			} else {
+				x = stack.pop();
+				p = stack.pop();
+			}
+			var l = stack.pop();
+			l[p] = x;
+			return stack.concat([l]);
+		},
+		get_at2:function(stack,args,context) {
+			var p1, p2;
+			if(args.length) {
+				p1 = args.shift();
+				p2 = args.shift();
+			} else {
+				p2 = stack.pop();
+				p1 = stack.pop();
+			}
+			var l = stack.pop();
+			return stack.concat([l,l[p1][p2]]);
+		},
+		set_at2:function(stack,args,context) {
+			var p1, p2, x;
+			if(args.length) {
+				p1 = args.shift();
+				p2 = args.shift();
+				x = args.shift();
+			} else {
+				x = stack.pop();
+				p2 = stack.pop();
+				p1 = stack.pop();
+			}
+			var l = stack.pop();
+			l[p1][p2] = x;
+			return stack.concat([l]);
+		},
 		forEach: function(stack,args,context){
 			var f = args.shift();
 			array.forEach(stack.pop(),function(_){
