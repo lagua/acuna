@@ -116,6 +116,7 @@ define([
 					// search each line
 					quots = block.split(/\n/).map(function(line,lineno,lines){
 						// capture nesting
+						var wordcount = 0;
 						var tmatch = line.match(/^\t+/g);
 						var tabs = tmatch && tmatch.length>0 ? tmatch[0] : null;
 						// count tabs
@@ -136,6 +137,7 @@ define([
 									 quot.push(val);
 								 }
 							} else {
+								wordcount++;
 								lastwrd = new Word(p,defno,blockno,lineno,index,depth,[]);
 								quot.push(lastwrd);
 							}
@@ -144,7 +146,9 @@ define([
 							quot:quot,
 							depth:depth,
 							line:lineno,
-							word:lastwrd
+							word:lastwrd,
+							count:parts.length,
+							wordcount:wordcount
 						};
 					});
 					var quot = [];
@@ -155,7 +159,13 @@ define([
 							return;
 						}
 						if(!q.depth) {
-							quot = quot.concat(q.quot);
+							// FIXME: what to do in which case?
+							// is it tabular data?
+							if(q.wordcount==0 && q.count) {
+								quot.push(q.quot);
+							} else {
+								quot = quot.concat(q.quot);
+							}
 						} else {
 							for(var j=i-1;j>=0;j--) {
 								var tq = quots[j];
@@ -433,6 +443,7 @@ define([
 				var f = function() {
 					return function(stack,args,context) {
 						quotation.forEach(function(q){
+							//console.log(q.toString())
 							stack = q(stack,args,context);
 						});
 						return stack;
@@ -513,6 +524,7 @@ define([
 							stack = stack.concat(pre_args);
 							if(args2stack) stack = stack.concat(args.splice(0,args2stack));
 							array.forEach(quots,function(q){
+								//console.log(q.toString())
 								stack = q(stack,[],context);
 							});
 							return stack;
