@@ -41,8 +41,20 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			stack = stack.concat([x,x]);
 			return stack;
 		},
+		over: function(stack,args,context) {
+			var t = stack.pop();
+			var x = stack.pop();
+			stack = stack.concat([x,t,x]);
+			return stack;
+		},
 		pop:function(stack,args,context){
 			stack.pop();
+			return stack;
+		},
+		nip: function(stack,args,context) {
+			var t = stack.pop();
+			stack.pop();
+			stack.push(t);
 			return stack;
 		},
 		swap:function(stack,args,context){
@@ -75,8 +87,8 @@ define(["dojo/_base/lang","dojo/_base/array"],
 		},
 		"if":function(stack,args,context){
 			var b = stack.pop();
-			var t = args.shift();
-			var f = args.shift();
+			var t = stack.pop();
+			var f = stack.pop();
 			stack.push(b ? t : f);
 			return stack;
 		},
