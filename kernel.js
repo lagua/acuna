@@ -105,7 +105,13 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			c[1] = stack.pop();
 			c[0] = stack.pop();
 			var b = stack.pop();
-			return c[+b](stack,args,context);
+			var f = c[+b];
+			if(typeof f == "function") {
+				return f(stack,args,context);
+			} else {
+				stack.push(f);
+				return stack;
+			}
 		},
 		"eq":function(stack,args,context){
 			var x = stack.pop(), y = stack.pop();
