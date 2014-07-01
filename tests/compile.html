@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"></meta>
+		<script src="http://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dojo/dojo.js" data-dojo-config="async:true,baseUrl:'js',packages:[{name:'dahex_com',location:'dahex_com_src'}]"></script>
+		<script>
+			require(["dojo/fx/easing"],function(){
+				require([
+					"dahex_com/parser"
+				], function(parser){
+					parser.toJS("una/test2.una",function(js){
+						console.log(js);
+					},false,[],null,{
+						useContextData:true,
+						module:true
+					});
+				});
+			});
+		</script>
+	</head>
+	<body style="background: #99b3cc; margin: 0; padding: 0;">
+		<canvas id="canvas" style="position: absolute; height: 100%; width: 100%;" width="1920" height="942"></canvas>
+	</body>
+</html>

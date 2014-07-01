@@ -1,29 +1,6 @@
 define(["dojo/_base/lang", "dojo/_base/array","dojo/dom-construct"],
 	function(lang,array, domConstruct){
-	
-	"use strict";
-
-	var markup = lang.getObject("acuna.markup", true);
-	
-	var checkMixed = function(obj){
-		var unmix = {};
-		for(var i=0;i<obj.length;i++) {
-			var _ = obj[i];
-			if(typeof _ == "object") {
-				if(_ instanceof Object) {
-					for(var k in _) {
-						if(unmix[k]) {
-							return true;
-						}
-						unmix[k] = 1;
-					}
-				}
-			} else {
-				return true;
-			}
-		}
-	};
-	
+		
 	var traverse = function(name,obj,parent){
 		var elm;
 		var attrs = {};
@@ -89,13 +66,13 @@ define(["dojo/_base/lang", "dojo/_base/array","dojo/dom-construct"],
 		return elm;
 	}
 	
-	markup.html = function(stack,args,context) {
+	var html = function(stack,context) {
 		var x = traverse("html",stack.pop());
 		domConstruct.place(x,context.document.documentElement,"replace");
 		stack.push(context.document.body);
 		return stack;
 	}
 	
-	return markup.html;
+	return html;
 	
 });

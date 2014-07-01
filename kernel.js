@@ -1,94 +1,306 @@
-define(["dojo/_base/lang","dojo/_base/array"],
-	function(lang,array){
+define(["dojo/_base/lang","dojo/Deferred"],
+	function(lang,Deferred){
 	
 	var kernel = lang.getObject("acuna.kernel", true);
 	var leave = false;
-
-	lang.mixin(kernel, {
-		bridge: function(stack,args,context){
-			// the function to bridge
-			var f = stack.pop();
-			var l = args.shift();
-			var useargs = args.shift();
-			var fargs = stack.splice(-l);
-			var lstack = stack.slice();
-			fargs = fargs.map(function(_){
-				if(typeof _ === "function") {
-					var f = function(_){
-						return function() {
-							if(useargs) lstack = lstack.concat(Array.prototype.slice.call(arguments));
-							lstack = _(lstack,args,context);
-						}
-					};
-					_ = f(_);
+	
+	if(!Object.keys) Object.keys = function(o) {
+		if (o !== Object(o))
+			throw new TypeError('Object.keys called on a non-object');
+		var k=[],p;
+		for (p in o) if (Object.prototype.hasOwnProperty.call(o,p)) k.push(p);
+		return k;
+	};
+	
+	var bridge = function(stack,context,obj){
+		// the function to bridge
+		var f = stack.pop();
+		var useargs = stack.pop();
+		var l = stack.pop();
+		if(!obj) obj = stack.pop();
+		var fargs = l ? stack.splice(-l) : [];
+		var lstack = stack.slice();
+		fargs = fargs.map(function(_){
+			if(typeof _ === "function") {
+				var f = function(_){
+					return function() {
+						if(useargs) lstack = lstack.concat(Array.prototype.slice.call(arguments));
+						lstack = _(lstack,context);
+					}
+				};
+				_ = f(_);
+			}
+			return _;
+		});
+		if(typeof f === "string") f = obj[f];
+		var a = f.apply(obj,fargs);
+		if(a!==undefined) stack.push(a);
+		return stack;
+	};
+	
+	function isNode(o){
+	  return (
+		typeof Node === "object" ? o instanceof Node : 
+		o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
+	  );
+	}
+	
+	function syntaxHighlight(json) {
+		json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+			var cls = 'number';
+			if (/^"/.test(match)) {
+				if(/DOMNode@/.test(match)) {
+					cls = "DOMNode";
+					match = match.replace(/\"/g,"");
+					match = match.replace("DOMNode@","");
+					var ar = match.split("#");
+					match = ar.length > 1 ? ar[0]+"<span class='boolean'>#"+ar[1]+"</span>" : ar[0];
+				} else if (/:$/.test(match)) {
+					match = match.replace(/\"/g,"");
+					cls = 'key';
+				} else if (/function\(\)/.test(match)) {
+					match = match.replace(/\"/g,"");
+					cls = "function";
+				} else {
+					cls = 'string';
 				}
-				return _;
-			});
-			var a = f.apply(window,fargs);
-			if(a) stack = stack.concat(a);
-			return stack;
-		},
-		apply:function(stack,args,context) {
-			var f = stack.pop();
-			stack = f(stack,[],context);
-			return stack;
-		},
-		object:function(stack,args,context){
-			stack.push(args.shift() || {});
-			return stack;
-		},
-		dup: function(stack,args,context) {
+			} else if (/true|false/.test(match)) {
+				cls = 'boolean';
+			} else if (/null/.test(match)) {
+				cls = 'null';
+			}
+			return '<span class="' + cls + '">' + match + '</span>';
+		});
+	}
+	
+	var operators = {
+		"eq":function(x,y) { return x === y; },
+		"ne":function(x,y) { return x !== y; },
+		"gt":function(x,y) { return x > y; },
+		"lt":function(x,y) { return x < y; },
+		"and":function(x,y) { return x && y; },
+		"or":function(x,y) { return x || y; },
+		"gte":function(x,y) { return x >= y; },
+		"lte":function(x,y) { return x <= y; }
+	};
+	
+	var comp = function(op) {
+		return function(stack,context) {
 			var x = stack.pop();
-			stack = stack.concat([x,x]);
+			var y = stack.pop();
+			stack.push(operators[op](x,y));
+			return stack;
+		}
+	};
+	
+	for(var op in operators) {
+		kernel[op] = comp(op);
+	}
+	
+	lang.mixin(kernel, {
+		test:function(stack,context){
+			console.log(stack);
 			return stack;
 		},
-		pop:function(stack,args,context){
+		set_var:function(stack,context){
+			var k = stack.pop();
+			var v = stack.pop();
+			context.vars[k] = v;
+			return stack;
+		},
+		get_var:function(stack,context){
+			var k = stack.pop();
+			stack.push(context.vars[k]);
+			return stack;
+		},
+		has_var:function(stack,context){
+			var k = stack.pop();
+			stack.push(context.vars.hasOwnProperty(k));
+			return stack;
+		},
+		unset_var:function(stack,context) {
+			var k = stack.pop();
+			delete context.vars[k];
+			return stack;
+		},
+		clear_stack:function(stack,context){
+			context.stack = [];
+			return [];
+		},
+		"call_global":function(stack,context){
+			return bridge(stack,context,context.window);
+		},
+		"call":function(stack,context){
+			return bridge(stack,context);
+		},
+		"new":function(stack,context){
+			var c = stack.pop();
+			stack.push(new c());
+			return stack;
+		},
+		win:function(stack,context){
+			stack.push(context.window);
+			return stack;
+		},
+		doc:function(stack,context){
+			stack.push(context.document);
+			return stack;
+		},
+		current_context:function(stack,context){
+			stack.push(context);
+			return stack;
+		},
+		current_stack:function(stack,context){
+			stack.push(context.stack);
+			return stack;
+		},
+		nil:function(stack,context){
+			stack.push([]);
+			return stack;
+		},
+		cons:function(stack,context){
+			var x = stack.pop();
+			var a = stack.pop();
+			a.push(x);
+			stack.push(a);
+			return stack;
+		},
+		uncons:function(stack,context) {
+			var x = stack[stack.length-1].pop();
+			stack.push(x);
+			return stack;
+		},
+		clone:function(stack,context){
+			var o = stack.pop();
+			stack.push(lang.clone(o));
+			return stack;
+		},
+		get_keys:function(stack,context){
+			var o = stack.pop();
+			stack.push(Object.keys(o));
+			return stack;
+		},
+		get_values: function(stack,context){
+			var o = stack.pop();
+			var t = [];
+			for(var k in o) {
+				if(obj.hasOwnProperty(k)) t.push(o[k]);
+			}
+			stack.push(t);
+			return stack;
+		},
+		noop:function(stack,context){
+			return stack;
+		},
+		get:function(stack,context) {
+			// get a property
+			var p = stack.pop();
+			var o = stack.pop();
+			stack.push(o[p]);
+			return stack;
+		},
+		set:function(stack,context) {
+			// get a property
+			var v = stack.pop();
+			var p = stack.pop();
+			var o = stack.pop();
+			o[p]=v;
+			return stack.concat([o,v]);
+		},
+		apply:function(stack,context) {
+			var f = stack.pop();
+			stack = f(stack,context);
+			return stack;
+		},
+		papply:function(stack,context) {
+			var t = stack.pop();
+			var a = stack.pop();
+			var f = function(t,a) {
+				return function(stack,context) {
+					stack.push(a);
+					return t(stack,context);
+				}
+			}
+			stack.push(f(t,a));
+			return stack;
+		},
+		dup:function(stack,context) {
+			var x = stack.pop();
+			stack.push(x);
+			stack.push(x);
+			return stack;
+		},
+		pop:function(stack,context){
 			stack.pop();
 			return stack;
 		},
-		swap:function(stack,args,context){
+		is_undef:function(stack,context){
+			var v = stack.pop();
+			stack.push(v===undefined);
+			return stack;
+		},
+		is_null:function(stack,context){
+			var v = stack.pop();
+			stack.push(v===null);
+			return stack;
+		},
+		swap:function(stack,context){
 			var x = stack.pop();
 			var y = stack.pop();
 			stack.push(x);
 			stack.push(y);
 			return stack;
 		},
-		dip:function(stack,args,context){
+		dip:function(stack,context){
 			// quotation
-			// if quotation in args use it!
-			var f = args.length ? args.shift() : stack.pop();
+			var f = stack.pop();
 			var t = stack.pop();
-			stack = f(stack,args,context);
+			stack = f(stack,context);
 			stack.push(t);
 			return stack;
 		},
-		quot:function(stack,args,context) {
-			var f = args.length ? args.shift() : stack.pop();
+		quot:function(stack,context) {
+			var f = stack.pop();
 			stack.push(f);
 			return stack;
 		},
-		compose:function(stack,args,context){
+		compose:function(stack,context){
 			// quotation
-			// if quotation in args use it!
-			//var lstack = array.map(stack,function(_) { return _ });
-			var f = function() {
-				args.forEach(function(_){
-					stack = _(stack,[],context);
-				});
-			}
-			f();
+			var a = stack.pop();
+			var b = stack.pop();
+			var f = function(a,b){
+				return function(stack,context){
+					stack = a(stack,context);
+					return b(stack,context);
+				}
+			};
+			stack.push(f(a,b));
 			return stack;
 		},
-		leave:function(stack,args,context){
+		leave:function(stack,context){
 			leave = true;
 			return stack;
 		},
-		"for":function(stack,args,context) {
-			var b = stack.pop();
-			var z = stack.pop();
-			for(var i=0;i<z;i++) {
-				stack.push(i);
-				stack = b(stack,args,context);
+		"while":function(stack,context) {
+			var t = stack.pop("function");
+			var f = stack.pop("function");
+			stack = t(stack,context);
+			var b = stack.pop("boolean");
+			while(b) {
+				stack = f(stack,context);
+				stack = t(stack,context);
+				b = stack.pop("boolean");
+			}
+			return stack;
+		},
+		"for":function(stack,context) {
+			var f = stack.pop();
+			var l = stack.pop();
+			var z = l;
+			while(l--) {
+				stack.push(z-l);
+				stack = f(stack,context);
 				if(leave) {
 					leave = false;
 					break;
@@ -96,46 +308,48 @@ define(["dojo/_base/lang","dojo/_base/array"],
 			}
 			return stack;
 		},
-		"throw":function(stack,args,context){
+		"not":function(stack,context){
+			var x = stack.pop("boolean");
+			stack.push(!x);
+			return stack;
+		},
+		if_true:function(stack,context){
+			var f = stack.pop("function");
+			var b = stack.pop("boolean");
+			if(b!==true) return stack;
+			return f(stack,context);
+		},
+		is_object:function(stack,context) {
+			var t = stack[stack.length-1];
+			stack.push(t && typeof t == "object" && !(t instanceof Array));
+			return stack;
+		},
+		"throw":function(stack,context){
 			alert("error: "+stack.pop());
 			return stack;
 		},
-		"if":function(stack,args,context){
+		"if":function(stack,context){
 			var c = [];
-			c[1] = stack.pop();
-			c[0] = stack.pop();
-			var b = stack.pop();
+			c[1] = stack.pop("function");
+			c[0] = stack.pop("function");
+			var b = stack.pop("boolean");
+			b = true === b;
 			var f = c[+b];
-			if(typeof f == "function") {
-				return f(stack,args,context);
-			} else {
-				stack.push(f);
-				return stack;
-			}
+			return f(stack,context);
 		},
-		"eq":function(stack,args,context){
-			var x = stack.pop(), y = stack.pop();
-			stack.push(x === y);
-			return stack;
-		},
-		"ne":function(stack,args,context){
-			var x = stack.pop(), y = stack.pop();
-			stack.push(x !== y);
-			return stack;
-		},
-		"gt":function(stack,args,context){
-			var x = stack.pop(), y = stack.pop();
-			stack.push(x > y);
-			return stack;
-		},
-		"and":function(stack,args,context){
-			var x = stack.pop(), y = stack.pop();
-			stack.push(x && y);
-			return stack;
-		},
-		"or":function(stack,args,context){
-			var x = stack.pop(), y = stack.pop();
-			stack.push(x || y);
+		pretty_print:function(stack,context){
+			var a = stack.pop();
+			a = a.map(function(_){
+				return syntaxHighlight(JSON.stringify(_,function(key, val) {
+					if(typeof val == "function") {
+						val = "function()";
+					} else if(typeof val == "object") {
+						if(isNode(val)) val = "DOMNode@"+val.nodeName.toLowerCase()+(val.id ? "#"+val.id : "")
+					}
+					return val;
+				}));
+			});
+			stack.push(a);
 			return stack;
 		}
 	});
