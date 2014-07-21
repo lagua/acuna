@@ -15,18 +15,21 @@ define(["dojo/_base/lang","dojo/Deferred"],
 	var bridge = function(stack,context,obj){
 		// the function to bridge
 		var f = stack.pop();
+		// should the bridge function receive args from the stack?
 		var useargs = stack.pop();
+		// number of arguments to use
 		var l = stack.pop();
 		if(!obj) obj = stack.pop();
 		var fargs = l ? stack.splice(-l) : [];
 		var lstack = stack.slice();
 		fargs = fargs.map(function(_){
 			if(typeof _ === "function") {
-				var f = function(_){
-					return function() {
+				function f(_){
+					function ff() {
 						if(useargs) lstack = lstack.concat(Array.prototype.slice.call(arguments));
 						lstack = _(lstack,context);
 					}
+					return ff;
 				};
 				_ = f(_);
 			}
