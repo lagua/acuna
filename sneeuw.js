@@ -1,436 +1,266 @@
-define([ "dahex_com/kernel-x" ], function(kernelX) {
+define([ "acuna/kernel/extended" ], function(extended) {
 
-	var new_object = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = kernelX['win'](__s, __a, __c);
-				__s = __s.concat([ "Object" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['get'](__s, __a, __c);
-			__s = kernelX['new'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	function new_object(__s, __c) {
+		__s = extended.win(__s, __c);
+		__s.push("Object");
+		__s = extended.get(__s, __c);
+		__s = extended['new'](__s, __c);
 		return __s;
-	};
-	var interval = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = kernelX['swap'](__s, __a, __c);
-				__s = __s.concat([ 2, false, "setInterval" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['call_global'](__s, __a, __c);
-			__s = kernelX['pop'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	}
+
+	function interval(__s, __c) {
+		__s = extended.swap(__s, __c);
+		__s = __s.concat([ 2, false, "setInterval" ]);
+		__s = extended['call_global'](__s, __c);
+		__s = extended['pop'](__s, __c);
 		return __s;
-	};
-	var by_id = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = kernelX['doc'](__s, __a, __c);
-				__s = __s.concat([ 1, false, "getElementById" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['call'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	}
+
+	function by_id(__s, __c) {
+		__s = extended.doc(__s, __c);
+		__s = __s.concat([ 1, false, "getElementById" ]);
+		__s = extended['call'](__s, __c);
 		return __s;
-	};
-	var body = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = kernelX['doc'](__s, __a, __c);
-				__s = __s.concat([ "body" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['get'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	}
+
+	function body(__s, __c) {
+		__s = extended.doc(__s, __c);
+		__s.push("body");
+		__s = extended.get(__s, __c);
 		return __s;
-	};
-	var ctx = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ "2d", "canvas" ]);
-				__s = by_id(__s, __a, __c);
-				__s = __s.concat([ 1, false, "getContext" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['call'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	}
+
+	function get_ctx(__s,__c) {
+		__s = __s.concat(["2d"]);
+		__s = canvas(__s,__c);
+		__s = __s.concat([1,false,"getContext"]);
+		__s = extended['call'](__s,__c);
 		return __s;
-	};
-	var teken_sneeuw = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ 0, 0, "canvas" ]);
-				__s = by_id(__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['dup'](__s, __a, __c);
-				__s = __s.concat([ "width" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['get'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['swap'](__s, __a, __c);
-				__s = __s.concat([ "height" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['get'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = ctx(__s, __a, __c);
-				__s = __s.concat([ 4, false, "clearRect" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['call'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = ctx(__s, __a, __c);
-				__s = __s.concat([ "fillStyle", "rgba(255, 255, 255, 0.8)" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['set'](__s, __a, __c);
-			__s = kernelX['pop'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ 0, false, "beginPath" ]);
-				__s = kernelX['call'](__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['dup'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ function(__s, __a, __c) {
-					__s = function(__s, __a, __c) {
-						__s = kernelX['dup'](__s, __a, __c);
-						__s = __s.concat([ "x" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get2'](__s, __a, __c);
-						__s = __s.concat([ "y" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = ctx(__s, __a, __c);
-						__s = __s.concat([ 2, false, "moveTo" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['call'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['dup'](__s, __a, __c);
-						__s = __s.concat([ "x" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get2'](__s, __a, __c);
-						__s = __s.concat([ "y" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['dig'](__s, __a, __c);
-						__s = __s.concat([ "r" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get'](__s, __a, __c);
-						__s = __s.concat([ 0 ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['PI'](__s, __a, __c);
-						__s = __s.concat([ 2 ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['*'](__s, __a, __c);
-						__s = __s.concat([ true ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = ctx(__s, __a, __c);
-						__s = __s.concat([ 6, false, "arc" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['call'](__s, __a, __c);
-					return __s;
-				} ]);
-				__s = kernelX['for_each'](__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = ctx(__s, __a, __c);
-				__s = __s.concat([ 0, false, "fill" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['call'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	}
+	
+	function ctx(__s,__c) {
+		__s = __s.concat(["_ctx"]);
+		__s = extended['get_var'](__s,__c);
 		return __s;
-	};
-	var update_sneeuw = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ 0.01 ]);
-				__s = kernelX['+'](__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['swap'](__s, __a, __c);
-			__s = kernelX['dup'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ function(__s, __a, __c) {
-					__s = function(__s, __a, __c) {
-						__s = kernelX['dup'](__s, __a, __c);
-						__s = __s.concat([ "d" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = kernelX['get4'](__s, __a, __c);
-					__s = kernelX['+'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['cos'](__s, __a, __c);
-						__s = __s.concat([ 1 ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['+'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get2'](__s, __a, __c);
-						__s = __s.concat([ "r" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get'](__s, __a, __c);
-						__s = __s.concat([ 2 ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['/'](__s, __a, __c);
-					__s = kernelX['+'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get2'](__s, __a, __c);
-						__s = __s.concat([ "y" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['+'](__s, __a, __c);
-						__s = __s.concat([ "y" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['swap'](__s, __a, __c);
-					__s = kernelX['set'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = __s.concat([ function(__s, __a, __c) {
-							__s = function(__s, __a, __c) {
-								__s = kernelX['dup'](__s, __a, __c);
-								__s = __s.concat([ "x" ]);
-								return __s;
-							}(__s, __a, __c);
-							__s = kernelX['get'](__s, __a, __c);
-							__s = kernelX['get4'](__s, __a, __c);
-							__s = function(__s, __a, __c) {
-								__s = kernelX['sin'](__s, __a, __c);
-								__s = __s.concat([ 2 ]);
-								return __s;
-							}(__s, __a, __c);
-							__s = kernelX['*'](__s, __a, __c);
-							__s = function(__s, __a, __c) {
-								__s = kernelX['+'](__s, __a, __c);
-								__s = __s.concat([ "x" ]);
-								return __s;
-							}(__s, __a, __c);
-							__s = kernelX['swap'](__s, __a, __c);
-							__s = kernelX['set'](__s, __a, __c);
-							return __s;
-						} ]);
-						__s = kernelX['dip'](__s, __a, __c);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = __s.concat([ "canvas" ]);
-						__s = by_id(__s, __a, __c);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['dup'](__s, __a, __c);
-						__s = __s.concat([ "width" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['swap'](__s, __a, __c);
-						__s = __s.concat([ "height" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['get'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['get2'](__s, __a, __c);
-						__s = __s.concat([ 5 ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['+'](__s, __a, __c);
-					__s = kernelX['get5'](__s, __a, __c);
-					__s = kernelX['gt'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['dig5'](__s, __a, __c);
-						__s = __s.concat([ 5 ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['neg'](__s, __a, __c);
-					__s = kernelX['swap'](__s, __a, __c);
-					__s = kernelX['lt'](__s, __a, __c);
-					__s = kernelX['or'](__s, __a, __c);
-					__s = kernelX['get2'](__s, __a, __c);
-					__s = kernelX['dig5'](__s, __a, __c);
-					__s = kernelX['gt'](__s, __a, __c);
-					__s = kernelX['or'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = __s.concat([ function(__s, __a, __c) {
-							__s = kernelX['pop'](__s, __a, __c);
-							__s = kernelX['random'](__s, __a, __c);
-							__s = function(__s, __a, __c) {
-								__s = kernelX['*'](__s, __a, __c);
-								__s = __s.concat([ "x" ]);
-								return __s;
-							}(__s, __a, __c);
-							__s = kernelX['swap'](__s, __a, __c);
-							__s = kernelX['set'](__s, __a, __c);
-							__s = function(__s, __a, __c) {
-								__s = kernelX['pop'](__s, __a, __c);
-								__s = __s.concat([ "y", -10 ]);
-								return __s;
-							}(__s, __a, __c);
-							__s = kernelX['set'](__s, __a, __c);
-							__s = kernelX['pop'](__s, __a, __c);
-							return __s;
-						} ]);
-						__s = kernelX['if_true'](__s, __a, __c);
-						return __s;
-					}(__s, __a, __c);
-					return __s;
-				} ]);
-				__s = kernelX['for_each'](__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = teken_sneeuw(__s, __a, __c);
-			__s = kernelX['swap'](__s, __a, __c);
-			return __s;
-		}(__s, [], __c);
+	}
+	
+	function canvas(__s,__c) {
+		__s = __s.concat(["_canvas"]);
+		__s = extended['get_var'](__s,__c);
 		return __s;
-	};
-	var sneeuw = function(__s, __a, __c) {
-		__s = function(__s, __a, __c) {
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ "canvas" ]);
-				__s = by_id(__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['test'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['dup'](__s, __a, __c);
-				__s = __s.concat([ "offsetWidth" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['get'](__s, __a, __c);
-				__s = __s.concat([ "width" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['swap'](__s, __a, __c);
-			__s = kernelX['set'](__s, __a, __c);
-			__s = kernelX['swap'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['dup'](__s, __a, __c);
-				__s = __s.concat([ "offsetHeight" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['get'](__s, __a, __c);
-				__s = __s.concat([ "height" ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['swap'](__s, __a, __c);
-			__s = kernelX['set'](__s, __a, __c);
-			__s = kernelX['swap'](__s, __a, __c);
-			__s = kernelX['pop'](__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = kernelX['nil'](__s, __a, __c);
-				__s = __s.concat([ 1500 ]);
-				return __s;
-			}(__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ function(__s, __a, __c) {
-					__s = kernelX['pop'](__s, __a, __c);
-					__s = new_object(__s, __a, __c);
-					__s = kernelX['get4'](__s, __a, __c);
-					__s = kernelX['random'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['*'](__s, __a, __c);
-						__s = __s.concat([ "x" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['swap'](__s, __a, __c);
-					__s = kernelX['set'](__s, __a, __c);
-					__s = kernelX['pop'](__s, __a, __c);
-					__s = kernelX['get3'](__s, __a, __c);
-					__s = kernelX['random'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['*'](__s, __a, __c);
-						__s = __s.concat([ "y" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['swap'](__s, __a, __c);
-					__s = kernelX['set'](__s, __a, __c);
-					__s = kernelX['pop'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = __s.concat([ 5 ]);
-						__s = kernelX['random'](__s, __a, __c);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['*'](__s, __a, __c);
-						__s = __s.concat([ "r" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['swap'](__s, __a, __c);
-					__s = kernelX['set'](__s, __a, __c);
-					__s = kernelX['pop'](__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = __s.concat([ 1500 ]);
-						__s = kernelX['random'](__s, __a, __c);
-						return __s;
-					}(__s, __a, __c);
-					__s = function(__s, __a, __c) {
-						__s = kernelX['*'](__s, __a, __c);
-						__s = __s.concat([ "d" ]);
-						return __s;
-					}(__s, __a, __c);
-					__s = kernelX['swap'](__s, __a, __c);
-					__s = kernelX['set'](__s, __a, __c);
-					__s = kernelX['pop'](__s, __a, __c);
-					__s = kernelX['cons'](__s, __a, __c);
-					return __s;
-				} ]);
-				__s = kernelX['for'](__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
-			__s = kernelX['bury'](__s, __a, __c);
-			__s = kernelX['pop'](__s, __a, __c);
-			__s = kernelX['pop'](__s, __a, __c);
-			__s = teken_sneeuw(__s, __a, __c);
-			__s = function(__s, __a, __c) {
-				__s = __s.concat([ 0, 33, update_sneeuw ]);
-				__s = interval(__s, __a, __c);
-				return __s;
-			}(__s, __a, __c);
+	}
+
+	function teken_sneeuw(__s1, __c) {
+		var __s = __s1.concat([ 0, 0 ]);
+		__s = canvas(__s, __c);
+		__s.push("width");
+		__s = extended.get(__s, __c);
+		__s = canvas(__s,__c);
+		__s.push("height");
+		__s = extended.get(__s, __c);
+		__s = ctx(__s, __c);
+		__s = __s.concat([ 4, false, "clearRect" ]);
+		__s = extended['call'](__s, __c);
+		__s = ctx(__s, __c);
+		__s = __s.concat([ "fillStyle", "rgba(255, 255, 255, 0.8)" ]);
+		__s = extended.set(__s, __c);
+		__s = extended['pop'](__s, __c);
+		__s = __s.concat([ 0, false, "beginPath" ]);
+		__s = extended['call'](__s, __c);
+		__s = extended.dup(__s, __c);
+		__s = __s.concat([ function(__s1, __c) {
+			var __s = extended.dup(__s1, __c);
+			__s.push("x");
+			__s = extended.get(__s, __c);
+			__s = extended.get2(__s, __c);
+			__s.push("y");
+			__s = extended.get(__s, __c);
+			__s = ctx(__s, __c);
+			__s = __s.concat([ 2, false, "moveTo" ]);
+			__s = extended['call'](__s, __c);
+			__s = extended.dup(__s, __c);
+			__s.push("x");
+			__s = extended.get(__s, __c);
+			__s = extended.get2(__s, __c);
+			__s.push("y");
+			__s = extended.get(__s, __c);
+			__s = extended.dig(__s, __c);
+			__s.push("r");
+			__s = extended.get(__s, __c);
+			__s.push(0);
+			__s = extended.PI(__s, __c);
+			__s.push(2);
+			__s = extended['*'](__s, __c);
+			__s.push(true);
+			__s = ctx(__s, __c);
+			__s = __s.concat([ 6, false, "arc" ]);
+			__s = extended['call'](__s, __c);
 			return __s;
-		}(__s, [], __c);
+		} ]);
+		__s = extended['for_each'](__s, __c);
+		__s = ctx(__s, __c);
+		__s = __s.concat([ 0, false, "fill" ]);
+		__s = extended['call'](__s, __c);
 		return __s;
-	};
+	}
+	function update_sneeuw(__s1, __c) {
+		var __s = __s1.concat([ 0.01 ]);
+		__s = extended['+'](__s, __c);
+		__s = extended.swap(__s, __c);
+		__s = extended.dup(__s, __c);
+		__s = __s.concat([ function(__s1, __c) {
+			var __s = extended.dup(__s1, __c);
+			__s.push("d");
+			__s = extended.get(__s, __c);
+			__s = extended.get4(__s, __c);
+			__s = extended['+'](__s, __c);
+			__s = extended.cos(__s, __c);
+			__s.push(1);
+			__s = extended['+'](__s, __c);
+			__s = extended.get2(__s, __c);
+			__s.push("r");
+			__s = extended.get(__s, __c);
+			__s.push(2);
+			__s = extended['/'](__s, __c);
+			__s = extended['+'](__s, __c);
+			__s = extended.get2(__s, __c);
+			__s.push("y");
+			__s = extended.get(__s, __c);
+			__s = extended['+'](__s, __c);
+			__s.push("y");
+			__s = extended.swap(__s, __c);
+			__s = extended.set(__s, __c);
+			__s = __s.concat([ function(__s1, __c) {
+				var __s = __s1;
+				__s = extended.dup(__s, __c);
+				__s.push("x");
+				__s = extended.get(__s, __c);
+				__s = extended.get4(__s, __c);
+				__s = extended.sin(__s, __c);
+				__s.push(2);
+				__s = extended['*'](__s, __c);
+				__s = extended['+'](__s, __c);
+				__s.push("x");
+				__s = extended.swap(__s, __c);
+				__s = extended.set(__s, __c);
+				return __s;
+			} ]);
+			__s = extended.dip(__s, __c);
+			__s = canvas(__s,__c);
+			__s.push("width");
+			__s = extended.get(__s, __c);
+			__s = canvas(__s,__c);
+			__s.push("height");
+			__s = extended.get(__s, __c);
+			__s = extended.get2(__s, __c);
+			__s.push(5);
+			__s = extended['+'](__s, __c);
+			__s = extended.get5(__s, __c);
+			__s = extended.gt(__s, __c);
+			__s = extended.dig5(__s, __c);
+			__s.push(5);
+			__s = extended.neg(__s, __c);
+			__s = extended.swap(__s, __c);
+			__s = extended.lt(__s, __c);
+			__s = extended.or(__s, __c);
+			__s = extended.get2(__s, __c);
+			__s = extended.dig5(__s, __c);
+			__s = extended.gt(__s, __c);
+			__s = extended.or(__s, __c);
+			__s = __s.concat([ function(__s1, __c) {
+				var __s = __s1;
+				__s = extended['pop'](__s, __c);
+				__s = extended.random(__s, __c);
+				__s = extended['*'](__s, __c);
+				__s.push("x");
+				__s = extended.swap(__s, __c);
+				__s = extended.set(__s, __c);
+				__s = extended['pop'](__s, __c);
+				__s = __s.concat([ "y", -10 ]);
+				__s = extended.set(__s, __c);
+				__s = extended['pop'](__s, __c);
+				return __s;
+			} ]);
+			__s = extended.if_true(__s, __c);
+			return __s;
+		} ]);
+		__s = extended['for_each'](__s, __c);
+		__s = teken_sneeuw(__s, __c);
+		__s = extended.swap(__s, __c);
+		return __s;
+	}
+	function sneeuw(__s1, __c) {
+		var __s = __s1;
+		__s.push("canvas");
+		__s = by_id(__s, __c);
+		__s.push("_canvas");
+		__s = extended['set_var'](__s,__c);
+		__s = get_ctx(__s, __c);
+		__s.push("_ctx");
+		__s = extended['set_var'](__s,__c);
+		__s = canvas(__s,__c);
+		__s.push("offsetWidth");
+		__s = extended.get(__s, __c);
+		__s = canvas(__s,__c);
+		__s.push("width");
+		__s = extended.dig(__s, __c);
+		__s = extended.set(__s, __c);
+		__s = extended['swap'](__s,__c);
+		__s.push("offsetHeight");
+		__s = extended.get(__s, __c);
+		__s = canvas(__s,__c);
+		__s.push("height");
+		__s = extended.dig(__s, __c);
+		__s = extended.set(__s, __c);
+		__s = extended['swap'](__s,__c);
+		__s = extended['pop'](__s,__c);
+		__s = extended.nil(__s, __c);
+		__s.push(1500);
+		__s = __s.concat([ function(__s, __c) {
+			__s = extended['pop'](__s, __c);
+			__s = new_object(__s, __c);
+			__s = extended.get4(__s, __c);
+			__s = extended.random(__s, __c);
+			__s = extended['*'](__s, __c);
+			__s.push("x");
+			__s = extended.swap(__s, __c);
+			__s = extended.set(__s, __c);
+			__s = extended['pop'](__s, __c);
+			__s = extended.get3(__s, __c);
+			__s = extended.random(__s, __c);
+			__s = extended['*'](__s, __c);
+			__s.push("y");
+			__s = extended.swap(__s, __c);
+			__s = extended.set(__s, __c);
+			__s = extended['pop'](__s, __c);
+			__s.push(5);
+			__s = extended.random(__s, __c);
+			__s = extended['*'](__s, __c);
+			__s.push("r");
+			__s = extended.swap(__s, __c);
+			__s = extended.set(__s, __c);
+			__s = extended['pop'](__s, __c);
+			__s.push(1500);
+			__s = extended.random(__s, __c);
+			__s = extended['*'](__s, __c);
+			__s.push("d");
+			__s = extended.swap(__s, __c);
+			__s = extended.set(__s, __c);
+			__s = extended['pop'](__s, __c);
+			__s = extended.cons(__s, __c);
+			return __s;
+		} ]);
+		__s = extended['for'](__s, __c);
+		__s = extended.bury(__s, __c);
+		__s = extended['pop'](__s, __c);
+		__s = extended['pop'](__s, __c);
+		__s = teken_sneeuw(__s, __c);
+		__s = __s.concat([ 0, 1000, 60 ]);
+		__s = extended['/'](__s, __c);
+		__s.push(update_sneeuw);
+		__s = interval(__s, __c);
+		return __s;
+	}
+
 	return sneeuw;
 });
