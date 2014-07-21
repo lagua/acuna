@@ -1,4 +1,4 @@
-define(["dojo/_base/lang","acuna/kernel","acuna/math","acuna/array"],
+define(["dojo/_base/lang","acuna/kernel","./math","./array"],
 	function(lang,k,math,array){
 	k = lang.mixin(k,math);
 	k = lang.mixin(k,array);
