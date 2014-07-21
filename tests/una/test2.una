@@ -1,7 +1,7 @@
 define
 	"document setup"
 
-use "dahex_com/kernel-x"
+use "acuna/kernel/extended"
 
 "a" 3 repeat_str
 test
