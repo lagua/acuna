@@ -3,8 +3,8 @@ define([
 "dojo/request",
 "dojo/Deferred",
 "dojo/json",
-"mori/mori"
-],function(lang,request,Deferred,JSON,mori) {
+//"mori/mori"
+],function(lang,request,Deferred,JSON/*,mori*/) {
 	
 	Object.size = function(obj) {
 	    var size = 0, key;
@@ -30,38 +30,38 @@ define([
 		oriPush.apply(this,arguments);
 	};*/
 
-	var isBool = function(n){
+	function isBool(n){
 		return n==="true" || n==="false";
 	};
 	
-	var isNull = function(n){
+	function isNull(n){
 		return n==="null";
 	};
 	
-	var isData = function(n) {
+	function isData(n) {
 		return isBool(n) || isNumeric(n) || isString(n) || isNull(n);
 	};
 	
-	var isNumeric = function(n) {
+	function isNumeric(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 	
-	var isString = function(n) {
+	function isString(n) {
 		return n.indexOf("\"") > -1;
 	}
 	
-	var isWord = function(a) {
+	function isWord(a) {
 		return typeof a == "object" && a instanceof Word;
 	};
 	
-	var normalizeModule = function(m) {
+	function normalizeModule(m) {
 		var w = m.split("/").pop();
 		return w.split("-").map(function(_,i){
 			return i===0 ? _ : _.charAt(0).toUpperCase() + _.substr(1);
 		}).join("");
 	};
 	
-	var Word = function(word,def,block,line,index,depth,args){
+	function Word(word,def,block,line,index,depth,args){
 		this.word = word;
 		this.def = def;
 		this.block = block;
@@ -71,7 +71,7 @@ define([
 		this.args = args || [];
 	};
 	
-	var inUse = function(def,word){
+	function inUse(def,word){
 		for(var i=0;i<def.USE.length;i++){
 			if(def.USE[i].args[1]==word) return true;
 		}
@@ -239,7 +239,7 @@ define([
 				use = use.concat(u);
 			});
 			var lastuse;
-			var getModuleByWord = function(word) {
+			function getModuleByWord(word) {
 				for(var k in modules) {
 					if(modules[k].word==word) return k;
 				}
@@ -321,11 +321,12 @@ define([
 								lang.mixin(context.resolvedWords,a);
 							}
 						} else {
-							var mf = function(a) {
-								return function(stack,context) {
+							function mf(a) {
+								function mff(stack,context) {
 									stack.push(a);
 									return stack;
 								};
+								return mff;
 							};
 							// in case we want to wrap objects
 							context.resolvedWords[m.word] = a; //mf(a);
@@ -443,11 +444,12 @@ define([
 								str += "}";
 								return str;
 							} : function(f,pre_args,args) {
-								return function(stack,context) {
+								function ff(stack,context) {
 									stack = stack.concat(pre_args);
 									stack = context.resolvedWords[f](stack,context);
 									return stack.concat(args);
 								}
+								return ff;
 							};
 							quotation.push(str ? "function:"+fc(f,pre_args,post_args) : fc(a.word,pre_args,post_args));
 						}
@@ -494,8 +496,8 @@ define([
 		},
 		createQuot: function(quot){
 			if(quot.length) {
-				var f = function() {
-					return function(stack,context) {
+				function f() {
+					function ff(stack,context) {
 						for(var i=0,l=quot.length;i<l;i++) {
 							//console.log(q.toString())
 							var q = quot[i];
@@ -507,6 +509,7 @@ define([
 						}
 						return stack;
 					};
+					return ff;
 				};
 				return quot.length == 1 ? quot.pop() : f();
 			}
@@ -578,8 +581,8 @@ define([
 							pre_args.unshift(a);
 						}
 					}
-					var f = function(w,quots,pre_args){
-						return function(stack,context) {
+					function f(w,quots,pre_args){
+						function ff(stack,context) {
 							stack = stack.concat(pre_args);
 							for(var i=0,l = quots.length;i<l;i++) {
 								//console.log(q.toString())
@@ -587,6 +590,7 @@ define([
 							}
 							return stack;
 						}
+						return ff;
 					};
 					context.resolvedWords[k] = f(k,quots,pre_args);
 				}
@@ -644,7 +648,7 @@ define([
 				data:{},
 				blocks:{},
 				vars:{},
-				stack:mori.list(),
+				stack:[],
 				document:document,
 				window:window
 			},seed);
@@ -660,7 +664,7 @@ define([
 				var modules = parser.getModules(def);
 				var reqs = [];
 				var words = [];
-				var requireVocabs = function(list,callback){
+				function requireVocabs(list,callback){
 					var result = {};
 					if(!list.length && callback) callback();
 					require(list,function(){
@@ -686,7 +690,7 @@ define([
 					}
 					reqs.push('"'+m+'"');
 				}
-				var getResolved = function(t){
+				function getResolved(t){
 					for(var m in modules) {
 						if(modules[m].targets[t]) return modules[m];
 					}
@@ -727,13 +731,13 @@ define([
 									pre_args.unshift(a);
 								}
 							}
-							var f = function(args2stack,quots,pre_args){
+							function f(args2stack,quots,pre_args){
 								var str = "function(__s,__c) {\n";
 								str += pre_args.length ? "\t__s = __s.concat("+JSON.stringify(pre_args)+");\n" : "";
 								//str += args2stack ? "\t__s = __s.concat(__a.splice(0,"+args2stack+"));\n" : "";
 								quots.forEach(function(q){
 									//q = q.substr(0,9)=="function:" ? q.substr(9) : q;
-									str += "\t__s = "+q+"(__s,[],__c);\n";
+									str += "\t__s = "+q+"(__s,__c);\n";
 								});
 								str += "\treturn __s;\n";
 								str += "};\n";
@@ -820,7 +824,7 @@ define([
 				data:{},
 				blocks:{},
 				vars:{},
-				stack:mori.list(),
+				stack:[],
 				document:document,
 				window:window
 			},seed);
