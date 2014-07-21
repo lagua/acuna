@@ -1,15 +1,23 @@
 define([
-"acuna/kernel/concat",
-"acuna/kernel/concat/extended",
-"dojo/dom-style"
-],function(concat,extended,domStyle){
+	"acuna/kernel/extended",
+	"dojo/dom-style"
+],function(extended,domStyle){
 
-return function(stack,args,context){
-	stack = stack.concat(args.splice(0,1));
-	stack = extended['dupdd'](stack,[],context);
-	stack = concat['bridge'](stack,[domStyle.get],context);
-	stack = stack.concat(args);
-	return stack;
+var getStyle = function(__s,__c) {
+	__s = function(__s,__c) {
+__s = function(__s,__c) {
+__s = extended['dupdd'](__s,__c);
+__s = __s.concat([2,false]);
+return __s;
+}(__s,__c);
+__s = function(__s,__c) {
+__s = __s.concat([{}]);
+__s = extended['call_global'](__s,__c);
+return __s;
+}(__s,__c);
+return __s;
+}(__s,[],__c);
+	return __s;
 };
-
+return getStyle;
 });

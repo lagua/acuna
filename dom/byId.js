@@ -1,17 +1,18 @@
 define([
-	"dojo/_base/lang",
-	"dojo/dom"
-],
-	function(lang, ddom){
-	
-	var dom = lang.getObject("acuna.dom", true);
-	
-	dom.byId = function(stack,args,context){
-		stack = stack.concat(args.splice(0,1));
-		stack.push(ddom.byId(stack.pop(),context.document));
-		stack = stack.concat(args.splice(0,args.length));
-		return stack;
-	}
-	
-	return dom.byId;
+	"acuna/kernel"
+],function(kernel){
+
+var byId = function(__s,__c) {
+	__s = function(__s,__c) {
+__s = function(__s,__c) {
+__s = kernel['doc'](__s,__c);
+__s = __s.concat([1,false,"getElementById"]);
+return __s;
+}(__s,__c);
+__s = kernel['call'](__s,__c);
+return __s;
+}(__s,[],__c);
+	return __s;
+};
+return byId;
 });
