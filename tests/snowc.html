@@ -4,18 +4,23 @@
 		<meta charset="utf-8"></meta>
 		<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 		<script>
-			require(["dojo/fx/easing"],function(){
-				require([
-					"acuna/parser"
-				], function(parser){
-					parser.toJS("una/sneeuw.una",function(js){
-						console.log(js);
-					},false,[],null,{
-						useContextData:true,
-						module:true
-					});
+		require(["acuna/layer"],function(){
+			require([
+				"acuna/sneeuw"
+			], function(sneeuw){
+				sneeuw([],{
+					DEFINE:{},
+					modules:{},
+					resolvedWords:{},
+					data:{},
+					blocks:{},
+					vars:{},
+					stack:[],
+					document:document,
+					window:window
 				});
 			});
+		});
 		</script>
 	</head>
 	<body style="background: #99b3cc; margin: 0; padding: 0;">

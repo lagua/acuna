@@ -1,11 +1,13 @@
 define
 	"laat het sneeuwen"
 
-use "dahex_com/kernel-x"
+use "acuna/kernel/extended"
 
 "canvas" by_id
-test dup "offsetWidth" get "width" swap set swap
-dup "offsetHeight" get "height" swap set swap pop
+"_canvas" set_var
+get_ctx "_ctx" set_var
+canvas "offsetWidth" get canvas "width" dig set swap
+"offsetHeight" get canvas "height" dig set swap pop
 nil 1500 for
 	pop new_object
 	get4 random * "x" swap set pop
@@ -29,7 +31,7 @@ define "update_sneeuw"
 	dup "d" get get4 + cos 1 + get2 "r" get 2 / + get2 "y" get + "y" swap set
 	dip
 		dup "x" get get4 sin 2 * + "x" swap set
-	"canvas" by_id dup "width" get swap "height" get
+	canvas "width" get canvas "height" get
 	get2 5 + get5 gt
 	dig5 5 neg swap lt or
 	get2 dig5 gt or
@@ -49,7 +51,7 @@ define "teken_sneeuw"
 	"string: de naam van de functie"
 	"dit woord is gebruikt het native canvas object om de sneeuw te tekenen"
 
-0 0 "canvas" by_id dup "width" get swap "height" get ctx 4 false "clearRect" call
+0 0 canvas "width" get canvas "height" get ctx 4 false "clearRect" call
 ctx "fillStyle" "rgba(255, 255, 255, 0.8)" set pop
 0 false "beginPath" call
 dup for_each
@@ -60,10 +62,22 @@ dup for_each
 ctx 0 false "fill" call
 
 
+define "canvas"
+	"retrieve canvas variable"
+
+"_canvas" get_var
+
+
 define "ctx"
+	"retrieve ctx variable"
+
+"_ctx" get_var
+
+
+define "get_ctx"
 	"get canvas object"
 
-"2d" "canvas" by_id 1 false "getContext" call
+"2d" canvas 1 false "getContext" call
 
 
 define "body"

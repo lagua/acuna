@@ -191,7 +191,7 @@
 			return document.getElementById(id);
 		}
 		require([
-			"acuna/kernel/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dojo/dom-class", "dijit/registry", "dojo/ready"
+			"acuna/parser", "dojo/query", "dojo/on", "dojo/request", "dojo/json", "dojo/dom-construct", "dojo/dom-class", "dijit/registry", "dojo/ready"
 		], function(parser, query, on, request, JSON, domConstruct, domClass, registry, ready){
 			var addPreview = function(context){
 				var prev = byId("preview")
@@ -281,7 +281,7 @@
 				parser.execute(file,function(context){
 					if(first) addPreview(context);
 					updateUI(context,first);
-				},direct,[],{
+				},direct,{},{
 					document:b.contentDocument,
 					window:b.contentWindow,
 					breakonwords: first ? [] : false

@@ -1,15 +1,15 @@
 define
 	"document setup"
 
-use "dahex_com/kernel-x"
+use "acuna/kernel/extended"
 use "dojo/dom-attr" "dattr"
 use "dojo/keys" "dkeys"
 use "dojo/on" "don"
 use "dojo/when" "dwhen"
 use "dojo/topic" "dtopic"
 use "dojo/dom-construct" "dconstruct"
-use "dahex_com/html" "html"
-use "dahex_com/parser" "parser"
+use "acuna/markup/html" "html"
+use "acuna/parser" "parser"
 
 0 "qdepth" set_var
 "" "quot" set_var
@@ -116,7 +116,7 @@ define "quot_out2"
 		id "quot"
 		style "background:#fff;clear:both;white-space:pre;"
 	pop
-"quot" "innerHTML" "quot" get_var "(\n)(\t*)([^\n]*)$" "g" regexp "$1$2●$3" replace set_attr
+"quot" "innerHTML" "quot" get_var "(\n)(\t*)([^\n]*)$" "g" regexp "$1$2â—�$3" replace set_attr
 
 
 define "by_id"

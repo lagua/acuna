@@ -1,7 +1,7 @@
-﻿define
+define
 	"context for dahex tutorial"
 
-use "dahex_com/kernel-x"
+use "acuna/kernel/extended"
 use "dojo/dom-attr" "dattr"
 use "dojo/dom-construct" "dconstruct"
 use "dojo/dom-style" "dstyle"
@@ -30,12 +30,6 @@ dup count 0 swap gt if_true
 	", " join "De volgende woorden ken ik niet: " swap + echo
 	clear_stack
 print_stack
-
-
-define "jamie"
-	"mijn favo gebruiker"
-
-gebruiker
 
 
 define "gebruiker"
