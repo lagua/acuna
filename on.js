@@ -1,8 +1,7 @@
 define([
-"acuna/kernel/concat",
-"acuna/kernel/concat/extended",
+"acuna/kernel/extended",
 "dojo/on"
-],function(concat,extended,don){
+],function(extended,don){
 
 return function(stack,args,context){
 	stack = stack.concat(args.splice(0,2));
