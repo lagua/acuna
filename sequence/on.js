@@ -1,5 +1,5 @@
-define(["dojo/_base/lang", "acuna/kernel/concat", "dojo/on"],
-	function(lang, concat, on){
+define(["dojo/_base/lang", "acuna/kernel/extended", "dojo/on"],
+	function(lang, extended, on){
 	
 	"use strict";
 
@@ -7,10 +7,10 @@ define(["dojo/_base/lang", "acuna/kernel/concat", "dojo/on"],
 	
 	seq.on = function(stack,args,context) {
 		stack.push(2);
-		stack = concat.args2stack(stack,args,context);
-		stack = concat.dupdd(stack,args,context);
+		stack = extended.args2stack(stack,args,context);
+		stack = extended.dupdd(stack,args,context);
 		stack.push(false);
-		stack = concat.bridge(stack,[on],context);
+		stack = extended.bridge(stack,[on],context);
 		
 		return stack;
 	}
