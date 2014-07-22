@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"></meta>
+		<script src="http://ajax.googleapis.com/ajax/libs/dojo/1.10.0/dojo/dojo.js" data-dojo-config="async:true,baseUrl:'../'"></script>
+		<script>
+			require(["dojo/fx/easing"],function(){
+				require([
+					"acuna/parser"
+				], function(parser){
+					parser.execute("una/sneeuw.una");
+				});
+			});
+		</script>
+	</head>
+	<body style="background: #99b3cc; margin: 0; padding: 0;">
+		<canvas id="canvas" style="position: absolute; height: 100%; width: 100%;" width="1920" height="942"></canvas>
+	</body>
+</html>

@@ -1,0 +1,103 @@
+define
+	"laat het sneeuwen"
+
+use "acuna/kernel/extended"
+
+"canvas" by_id
+"_canvas" set_var
+get_ctx "_ctx" set_var
+canvas "offsetWidth" get canvas "width" dig set swap
+"offsetHeight" get canvas "height" dig set swap pop
+nil 1500 for
+	pop new_object
+	get4 random * "x" swap set pop
+	get3 random * "y" swap set pop
+	5 random * "r" swap set pop
+	1500 random * "d" swap set pop
+	cons
+bury pop pop
+teken_sneeuw
+0 1000 60 / interval
+	update_sneeuw
+
+
+define "update_sneeuw"
+	"update de sneeuw"
+	"'for_each' (kernel/array) voert een quotation uit voor elk item in een array (plus gehele stack op dat moment)"
+	"'dig', 'dig4' en 'dig5' halen dieperliggende stackwaardes naar de top"
+	"'neg' keert posi-/negatief van getal om"
+
+0.01 + swap dup for_each
+	dup "d" get get4 + cos 1 + get2 "r" get 2 / + get2 "y" get + "y" swap set
+	dip
+		dup "x" get get4 sin 2 * + "x" swap set
+	canvas "width" get canvas "height" get
+	get2 5 + get5 gt
+	dig5 5 neg swap lt or
+	get2 dig5 gt or
+	if_true
+		pop random * "x" swap set pop "y" -10 set pop
+teken_sneeuw
+swap
+
+
+define "teken_sneeuw"
+	"teken de sneeuw"
+	"'ctx' zet de canvas.getContext('2d') op de stack"
+	"'call' voert een method op een native object uit, waarbij:"
+	"object: het object waarop de method wordt toegepast"
+	"integer: het aantal parameters is dat de functie van stack gebruikt"
+	"boolean: indien er functies worden meegestuurd, laat deze hun resultaat op de stack zetten"
+	"string: de naam van de functie"
+	"dit woord is gebruikt het native canvas object om de sneeuw te tekenen"
+
+0 0 canvas "width" get canvas "height" get ctx 4 false "clearRect" call
+ctx "fillStyle" "rgba(255, 255, 255, 0.8)" set pop
+0 false "beginPath" call
+dup for_each
+	dup "x" get get2 "y" get
+	ctx 2 false "moveTo" call
+	dup "x" get get2 "y" get dig "r" get 0 PI 2 * true 
+	ctx 6 false "arc" call
+ctx 0 false "fill" call
+
+
+define "canvas"
+	"retrieve canvas variable"
+
+"_canvas" get_var
+
+
+define "ctx"
+	"retrieve ctx variable"
+
+"_ctx" get_var
+
+
+define "get_ctx"
+	"get canvas object"
+
+"2d" canvas 1 false "getContext" call
+
+
+define "body"
+	"get body element"
+
+doc "body" get
+
+
+define "by_id"
+	"element.byId"
+
+doc 1 false "getElementById" call
+
+
+define "interval"
+
+swap 2 false "setInterval" call_global pop
+
+
+define "new_object"
+	"create new generic object"
+
+win "Object" get new

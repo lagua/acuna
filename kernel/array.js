@@ -1,87 +1,77 @@
-define(["dojo/_base/lang", "dojo/_base/array"],
-	function(lang, array){
+define(["dojo/_base/lang"],
+	function(lang){
 	
-	"use strict";
-
 	var kernel = lang.getObject("acuna.kernel", true);
 
 	kernel.array = {};
 	lang.mixin(kernel.array, {
-		count: function(stack,args,context) {
+		count: function(stack,context) {
 			var l = stack.pop();
-			return stack.concat([l,l.length]);
+			stack.push(l.length);
+			return stack;
 		},
-		get_at:function(stack,args,context) {
+		get_at:function(stack,context) {
 			var l = stack.pop();
-			var p = args.shift();
-			return stack.concat([l,l[p]]);
+			var p = stack.pop();
+			return stack.concat([p[l]]);
 		},
-		set_at:function(stack,args,context) {
+		set_at:function(stack,context) {
 			var p,x;
-			if(args.length) {
-				p = args.shift();
-				x = args.shift();
-			} else {
-				x = stack.pop();
-				p = stack.pop();
-			}
+			x = stack.pop();
+			p = stack.pop();
 			var l = stack.pop();
 			l[p] = x;
 			return stack.concat([l]);
 		},
-		get_at2:function(stack,args,context) {
+		get_at2:function(stack,context) {
 			var p1, p2;
-			if(args.length) {
-				p1 = args.shift();
-				p2 = args.shift();
-			} else {
-				p2 = stack.pop();
-				p1 = stack.pop();
-			}
+			p2 = stack.pop();
+			p1 = stack.pop();
 			var l = stack.pop();
 			return stack.concat([l,l[p1][p2]]);
 		},
-		set_at2:function(stack,args,context) {
+		set_at2:function(stack,context) {
 			var p1, p2, x;
-			if(args.length) {
-				p1 = args.shift();
-				p2 = args.shift();
-				x = args.shift();
-			} else {
-				x = stack.pop();
-				p2 = stack.pop();
-				p1 = stack.pop();
-			}
+			x = stack.pop();
+			p2 = stack.pop();
+			p1 = stack.pop();
 			var l = stack.pop();
 			l[p1][p2] = x;
 			return stack.concat([l]);
 		},
-		forEach: function(stack,args,context){
+		for_each: function(stack,context){
 			var f = stack.pop();
 			var a = stack.pop();
-			var lstack = stack.slice();
-			array.forEach(a,function(_){
-				lstack = f(lstack.concat(_),[],context);
-			});
+			var tf = function(_){
+				var lstack = stack.slice();
+				lstack.push(_);
+				lstack = f(lstack,context);
+			};
+			for(var i=0,l = a.length;i<l;i++) {
+				tf(a[i]);
+			}
 			return stack;
 		},
-		concat: function(stack,args,context) {
+		map: function(stack,context){
+			var f = stack.pop();
+			var a = stack.pop();
+			a = a.map(function(_){
+				var lstack = stack.slice();
+				lstack.push(_);
+				lstack = f(lstack,context);
+				var r = lstack.pop();
+				return r;
+			});
+			stack.push(a);
+			return stack;
+		},
+		concat: function(stack,context) {
 			var x = stack.pop();
 			var y = stack.pop();
 			stack.push(y.concat(x));
 			return stack;
 		},
-		map: function(stack,args,context){
-			var f = stack.pop();
-			var a = stack.pop();
-			var lstack = stack.slice();
-			stack.push(array.map(a,function(_){
-				lstack = f(lstack.concat(_),[],context);
-				return lstack.pop();
-			}));
-			return stack;
-		},
-		reverse: function(stack,args,context) {
+		reverse: function(stack,context) {
 			var x = stack.pop();
 			x.reverse();
 			stack.push(x);

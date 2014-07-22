@@ -1,0 +1,17 @@
+define
+	"document setup"
+
+use "acuna/kernel/extended"
+
+"a" 3 repeat_str
+test
+
+
+define "repeat_str"
+	"repeat a string"
+
+nil bury dip
+	papply
+		cons
+swap repeat
+"" swap 1 false "join" call

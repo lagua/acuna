@@ -1,11 +1,10 @@
 define([
 "dojo/_base/lang",
-"dojo/_base/array",
 "dojo/request",
 "dojo/Deferred",
-"dojo/json"
-],function(lang,array,request,Deferred,JSON) {
-	lang.getObject("acuna.kernel",true);
+"dojo/json",
+//"mori/mori"
+],function(lang,request,Deferred,JSON/*,mori*/) {
 	
 	Object.size = function(obj) {
 	    var size = 0, key;
@@ -14,35 +13,55 @@ define([
 	    }
 	    return size;
 	};
+	
+	/*var oriPop = Array.prototype.pop;
+	var oriPush = Array.prototype.push;
+	
+	Array.prototype.pop = function(t) {
+		if(!this.length) throw new Error("Stack underflow occurred.");
+		var x = oriPop.apply(this,arguments);
+		if(!t) return x;
+		var xt = typeof x;
+		if(xt !== t) throw new Error("The required type is a "+t+". Value on the stack is a "+xt+".");
+		return x;
+	};
+	
+	Array.prototype.push = function() {
+		oriPush.apply(this,arguments);
+	};*/
 
-	var isBool = function(n){
+	function isBool(n){
 		return n==="true" || n==="false";
 	};
 	
-	var isData = function(n) {
-		return isBool(n) || isNumeric(n) || isString(n);
+	function isNull(n){
+		return n==="null";
 	};
 	
-	var isNumeric = function(n) {
+	function isData(n) {
+		return isBool(n) || isNumeric(n) || isString(n) || isNull(n);
+	};
+	
+	function isNumeric(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 	
-	var isString = function(n) {
+	function isString(n) {
 		return n.indexOf("\"") > -1;
 	}
 	
-	var isWord = function(a) {
+	function isWord(a) {
 		return typeof a == "object" && a instanceof Word;
 	};
 	
-	var normalizeModule = function(m) {
+	function normalizeModule(m) {
 		var w = m.split("/").pop();
-		return array.map(w.split("-"),function(_,i){
+		return w.split("-").map(function(_,i){
 			return i===0 ? _ : _.charAt(0).toUpperCase() + _.substr(1);
 		}).join("");
 	};
 	
-	var Word = function(word,def,block,line,index,depth,args){
+	function Word(word,def,block,line,index,depth,args){
 		this.word = word;
 		this.def = def;
 		this.block = block;
@@ -52,11 +71,13 @@ define([
 		this.args = args || [];
 	};
 	
-	var inUse = function(def,word){
+	function inUse(def,word){
 		for(var i=0;i<def.USE.length;i++){
 			if(def.USE[i].args[1]==word) return true;
 		}
 	};
+	
+	function recurse(s,a,c){ console.log(s); return s; };
 	
 	var parser = {
 		parse:function(context,string,path,preserveData){
@@ -121,16 +142,17 @@ define([
 						var tabs = tmatch && tmatch.length>0 ? tmatch[0] : null;
 						// count tabs
 						var depth = tabs ? tabs.match(/\t/g).length : 0;
-						line = line.replace(tabs,"");
+						line = tabs ? line.replace(tabs,"") : line;
+						line = line.replace(/\\"/g,"&quot;");
 						// split line on spaces, preserving anything between quotes
 						var parts = line.match(/[^"\s]+|"(.*?)"/g);
 						if(!parts) return;
 						// search line parts
 						var lastwrd;
 						var quot = [];
-						array.forEach(parts,function(p,index){
+						parts.forEach(function(p,index){
 							if(isData(p)) {
-								 var val = isBool(p) ?  eval(p) : isNumeric(p) ? parseFloat(p) : p.replace(/"/g,"");
+								 var val = isBool(p) || isNull(p) ?  eval(p) : isNumeric(p) ? parseFloat(p) : p.replace(/"/g,"").replace(/&quot;/g,"\"").replace(/\\n/g,"\n").replace(/\\t/g,"\t");
 								 if(lastwrd) {
 									 lastwrd.args.push(val);
 								 } else {
@@ -152,22 +174,34 @@ define([
 						};
 					});
 					var quot = [];
+					var singledata = true;
 					quots.forEach(function(q,i){
+						var j;
 						if(!q) {
-							var prev = quots[i-1].quot;
-							if(prev) prev[prev.length-1].comma = true;
+							j = i-1;
+							var prev = quots[j];
+							var next = quots[i+1];
+							while(j>0 && (!prev || next.depth!=prev.depth)) {
+								j--;
+								prev = quots[j];
+							}
+							if(prev && prev.quot) prev.quot[prev.quot.length-1].comma = true;
 							return;
 						}
+						if(q.wordcount) singledata = false;
 						if(!q.depth) {
 							// FIXME: what to do in which case?
 							// is it tabular data?
-							if(q.wordcount==0 && q.count) {
+							// all just data: tabular
+							// single line of data, mixed content: array
+							if(q.wordcount==0 && q.count && quots.length > 1) {
+								singledata = false;
 								quot.push(q.quot);
 							} else {
 								quot = quot.concat(q.quot);
 							}
 						} else {
-							for(var j=i-1;j>=0;j--) {
+							for(j=i-1;j>=0;j--) {
 								var tq = quots[j];
 								if(!tq) continue;
 								if(tq.depth==q.depth-1) {
@@ -185,10 +219,14 @@ define([
 						if(target=="USE") {
 							def.USE = def.USE.concat(quot);
 						} else if(target=="DEFINE") {
-							def.comments.concat(quot);
+							def.comments = def.comments.concat(quot);
 						} else {
-							quot[quot.length-1].comma = true;
-							def.args.push(quot);
+							//if(quot.length>1) quot[quot.length-1].comma = true;
+							if(singledata) {
+								def.args = def.args.concat(quot);
+							} else {
+								def.args.push(quot);
+							}
 						}
 					}
 				});
@@ -197,17 +235,17 @@ define([
 		},
 		getModules:function(def){
 			var use = [], modules = {};
-			array.forEach(def.USE,function(u) {
+			def.USE.forEach(function(u) {
 				use = use.concat(u);
 			});
 			var lastuse;
-			var getModuleByWord = function(word) {
+			function getModuleByWord(word) {
 				for(var k in modules) {
 					if(modules[k].word==word) return k;
 				}
 			};
 			var i = 0;
-			array.forEach(use,function(u) {
+			use.forEach(function(u) {
 				var m;
 				if(u.word.toUpperCase()!="USE") {
 					m = getModuleByWord(u.word);
@@ -272,7 +310,7 @@ define([
 							modules[toResolve[i].module] = context.DEFINE[m.word];
 						} else if(typeof a != "function" && !m.word) {
 							if(m.context.length) {
-								items = items.concat(array.map(m.context,function(item){
+								items = items.concat(m.context.map(function(item){
 									if(item.f) {
 										item.module = a;
 										item.index = i;
@@ -283,16 +321,24 @@ define([
 								lang.mixin(context.resolvedWords,a);
 							}
 						} else {
-							context.resolvedWords[m.word] = a;
+							function mf(a) {
+								function mff(stack,context) {
+									stack.push(a);
+									return stack;
+								};
+								return mff;
+							};
+							// in case we want to wrap objects
+							context.resolvedWords[m.word] = a; //mf(a);
 							modules[toResolve[i].module] = a;
 						}
 					}
 					def.modules = modules;
 					if(items.length) {
-						all(array.map(items,function(item){
+						all(items.map(function(item){
 							return item.f(item.module,item.args);
 						})).then(function(res){
-							array.forEach(res,function(a,i){
+							res.forEach(function(a,i){
 								var m = toResolve[items[i].index].module;
 								lang.mixin(context.resolvedWords,a);
 								def.modules[m] = items[i].module;
@@ -312,7 +358,7 @@ define([
 				obj[w.word] = {};
 				var keys = [];
 				// use array for mixed content, object for anything else
-				for(var i=0;i<w.args.length;i++) {
+				for(var i=0,l=w.args.length;i<l;i++) {
 					var a = w.args[i];
 					
 					var key = a.word;
@@ -358,13 +404,22 @@ define([
 			for(var i=0;i<quot.length;i++) {
 				var a = quot[i];
 				if(isWord(a)) {
+					var rec = false;
 					var word = a.word.charAt(0) == "." ? a.word.substr(1) : a.word; 
 					var rw = lang.getObject(word,false,context.resolvedWords);
 					var wo = parser.parseWord(a,context,str);
-					if(rw) {
+					// allow recursion / ignore parsing order
+					if(!rw && context.DEFINE[word]) {
+						rec = true;
+					}
+					if(rw ||rec) {
 						comma = comma || a.comma;
 						type = "quot";
 						var f = str ? (context.resolvedWords[a.word] != a.word ? context.resolvedWords[a.word] + "['"+a.word+"']" : a.word) : rw;
+						if(rec) {
+							f = new Function("return function "+a.word+"(){};")();
+							console.log(a.word,f)
+						}
 						if(!a.args.length && !obj.length) {
 							quotation.push(str ? "function:"+f : f);
 						} else {
@@ -381,21 +436,22 @@ define([
 								}
 							}
 							var fc = str ? function(f,pre_args,args) {
-								var str = "function(__s,__a,__c) {\n";
-								str += (args.length) ? "__a = "+JSON.stringify(args)+".concat(__a);\n" : "";
+								var str = "function(__s,__c) {\n";
 								str += pre_args.length ? "__s = __s.concat(["+pre_args.join(",")+"]);\n" : "";
-								str += "__s = "+f+"(__s,__a,__c);\n";
-								str += "return __s.concat(__a);\n";
+								str += "__s = "+f+"(__s,__c);\n";
+								str += (args.length) ? "__s = __s.concat("+JSON.stringify(args)+");\n" : "";
+								str += "return __s;\n";
 								str += "}";
 								return str;
 							} : function(f,pre_args,args) {
-								return function(stack,fargs,context) {
+								function ff(stack,context) {
 									stack = stack.concat(pre_args);
-									stack = f(stack,args,context);
+									stack = context.resolvedWords[f](stack,context);
 									return stack.concat(args);
 								}
+								return ff;
 							};
-							quotation.push(str ? "function:"+fc(f,pre_args,post_args) : fc(f,pre_args,post_args));
+							quotation.push(str ? "function:"+fc(f,pre_args,post_args) : fc(a.word,pre_args,post_args));
 						}
 					} else {
 						type = "object";
@@ -428,7 +484,7 @@ define([
 						var w = parser.parseWord({
 							args:[a]
 						},context,str)
-						obj = obj.concat(str ? array.map(w.args,function(_) {
+						obj = obj.concat(str ? w.args.map(function(_) {
 							return _.substr(0,9)=="function:" ? _.substr(9) : _;
 						}) : w.args);
 					} else {
@@ -438,27 +494,33 @@ define([
 			}
 			return {obj:obj,type:type,quot:quotation,comma:comma};
 		},
-		createQuot: function(quotation){
-			if(quotation.length) {
-				var f = function() {
-					return function(stack,args,context) {
-						quotation.forEach(function(q){
+		createQuot: function(quot){
+			if(quot.length) {
+				function f() {
+					function ff(stack,context) {
+						for(var i=0,l=quot.length;i<l;i++) {
 							//console.log(q.toString())
-							stack = q(stack,args,context);
-						});
+							var q = quot[i];
+							//if(q.name && context.resolvedWords[q.name]) {
+							//	stack = context.resolvedWords[q.name](stack,context);
+							//} else {
+								stack = q(stack,context);
+							//}
+						}
 						return stack;
 					};
+					return ff;
 				};
-				return quotation.length == 1 ? quotation.pop() : f();
+				return quot.length == 1 ? quot.pop() : f();
 			}
 		},
 		createQuotStr: function(quotation){
 			var str = "";
 			if(quotation.length) {
 				if(quotation.length > 1) {
-					str += "function:function(__s,__a,__c) {\n";
+					str += "function:function(__s,__c) {\n";
 					quotation.forEach(function(q){
-						str += "__s = "+q.substr(9,q.length)+"(__s,__a,__c);\n";
+						str += "__s = "+q.substr(9,q.length)+"(__s,__c);\n";
 					});
 					str += "return __s;\n";
 					str += "}";
@@ -508,7 +570,7 @@ define([
 		words:function(context) {
 			for(var k in context.DEFINE) {
 				if(context.DEFINE[k].args.length) {
-					var w = parser.parseWord(context.DEFINE[k],context);
+					var w = parser.parseWord(context.DEFINE[k],context,false,true);
 					var args = w.args.slice(), pre_args = [], post_args = [];
 					var quots = [];
 					while(args.length) {
@@ -519,18 +581,18 @@ define([
 							pre_args.unshift(a);
 						}
 					}
-					var f = function(w,args2stack,quots,pre_args){
-						return function(stack,args,context) {
+					function f(w,quots,pre_args){
+						function ff(stack,context) {
 							stack = stack.concat(pre_args);
-							if(args2stack) stack = stack.concat(args.splice(0,args2stack));
-							array.forEach(quots,function(q){
+							for(var i=0,l = quots.length;i<l;i++) {
 								//console.log(q.toString())
-								stack = q(stack,[],context);
-							});
+								stack = quots[i](stack,context);
+							}
 							return stack;
 						}
+						return ff;
 					};
-					context.resolvedWords[k] = f(k,w.args2stack,quots,pre_args);
+					context.resolvedWords[k] = f(k,quots,pre_args);
 				}
 			}
 			return context;
@@ -565,8 +627,8 @@ define([
 			    return str;
 			}
 			var str = "";
-			array.forEach(context.DEFINE[context.exec].args,function(a){
-				array.forEach(a,function(w){
+			context.DEFINE[context.exec].args.forEach(function(a){
+				a.forEach(function(w){
 					if(w.word == "style") {
 						w = parser.parseWord(w,context);
 						var obj = w.args[0];
@@ -576,99 +638,119 @@ define([
 			});
 			callback(str);
 		},
-		toJS:function(context,callback,options){
+		toJS:function(file,callback,direct,args,seed,options){
+			seed = seed || {};
 			options = options || {};
-			var def = context.DEFINE[context.exec];
-			var modules = parser.getModules(def);
-			var reqs = [];
-			var words = [];
-			var vocabs = {};
-			var requireVocabs = function(list,callback){
-				var result = {};
-				if(!list.length && callback) callback();
-				require(list,function(){
-					for(var i=0;i<list.length;i++) {
-						result[list[i]] = [];
-						for(var k in arguments[i]) {
-							result[list[i]].push(k);
-						}
-					}
-					if(callback) callback(result);
-				});
-			};
-			var vocabs = [];
-			var data = {};
-			/*if(options.useContextData) {
-				for(var k in context.data) {
-					data[k] = parser.parseData(context.data[k],true);
-				}
-			}*/
-			for(m in modules) {
-				if(!modules[m].word) {
-					vocabs.push(m);
-				}
-				reqs.push('"'+m+'"');
+			var context = lang.mixin({
+				DEFINE:{},
+				modules:{},
+				resolvedWords:{},
+				data:{},
+				blocks:{},
+				vars:{},
+				stack:[],
+				document:document,
+				window:window
+			},seed);
+			var d = new Deferred();
+			if(direct) {
+				d.resolve(direct);
+			} else {
+				d = request.get(file);
 			}
-			var getResolved = function(t){
-				for(var m in modules) {
-					if(modules[m].targets[t]) return modules[m];
-				}
-			}
-			requireVocabs(vocabs,function(vocabs){
-				var str = options.module ? "define" : "require";
-				str += "([\n\t"+reqs.join(",\n\t")+"\n],function(";
-				var resolvedWords = {};
-				var mods = [];
-				for(m in modules) {
-					var i = modules[m].index;
-					var w = modules[m].word;
-					if(w) {
-						mods.push(w);
-						context.resolvedWords[w] = w;
-					} else {
-						var nm = normalizeModule(m);
-						mods.push(nm);
-						array.forEach(vocabs[m],function(w){
-							context.resolvedWords[w] = nm;
-						});
-					}
-				}
-				str += mods.join(",");
-				str += "){\n\n";
-				var t = "\t\t";
-				for(var k in context.DEFINE) {
-					if(context.DEFINE[k].args.length) {
-						var w = parser.parseWord(context.DEFINE[k],context,true);
-						var args = w.args.slice(), pre_args = [], post_args = [];
-						var quots = [];
-						while(args.length) {
-							var a = args.pop();
-							if(typeof a =="string") {
-								a = a.substr(0,9) == "function:" ? a.substr(9) : a;
-								quots.unshift(a);
-							} else {
-								pre_args.unshift(a);
+			d.then(function(result){
+				context = parser.parse(context,result,file);
+				var def = context.DEFINE[context.exec];
+				var modules = parser.getModules(def);
+				var reqs = [];
+				var words = [];
+				function requireVocabs(list,callback){
+					var result = {};
+					if(!list.length && callback) callback();
+					require(list,function(){
+						for(var i=0;i<list.length;i++) {
+							result[list[i]] = [];
+							for(var k in arguments[i]) {
+								result[list[i]].push(k);
 							}
 						}
-						var f = function(args2stack,quots,pre_args){
-							var str = "function(__s,__a,__c) {\n";
-							str += pre_args.length ? "\t__s = __s.concat("+JSON.stringify(pre_args)+");\n" : "";
-							str += args2stack ? "\t__s = __s.concat(__a.splice(0,"+args2stack+"));\n" : "";
-							quots.forEach(function(q){
-								//q = q.substr(0,9)=="function:" ? q.substr(9) : q;
-								str += "\t__s = "+q+"(__s,[],__c);\n";
-							});
-							str += "\treturn __s;\n";
-							str += "};\n";
-							return str;
-						};
-						context.resolvedWords[k] = k;
-						str += "var "+k+" = "+f(w.args2stack,quots,pre_args);
-						str += k==context.exec ? "return "+k+";\n" : "";
+						if(callback) callback(result);
+					});
+				};
+				var vocabs = [];
+				var data = {};
+				/*if(options.useContextData) {
+					for(var k in context.data) {
+						data[k] = parser.parseData(context.data[k],true);
+					}
+				}*/
+				for(m in modules) {
+					if(!modules[m].word) {
+						vocabs.push(m);
+					}
+					reqs.push('"'+m+'"');
+				}
+				function getResolved(t){
+					for(var m in modules) {
+						if(modules[m].targets[t]) return modules[m];
 					}
 				}
-				str += "});";
-				if(callback) callback(str);
+				requireVocabs(vocabs,function(vocabs){
+					var str = options.module ? "define" : "require";
+					str += "([\n\t"+reqs.join(",\n\t")+"\n],function(";
+					var resolvedWords = {};
+					var mods = [];
+					for(m in modules) {
+						var i = modules[m].index;
+						var w = modules[m].word;
+						if(w) {
+							mods.push(w);
+							context.resolvedWords[w] = w;
+						} else {
+							var nm = normalizeModule(m);
+							mods.push(nm);
+							vocabs[m].forEach(function(w){
+								context.resolvedWords[w] = nm;
+							});
+						}
+					}
+					str += mods.join(",");
+					str += "){\n\n";
+					var t = "\t\t";
+					for(var k in context.DEFINE) {
+						if(context.DEFINE[k].args.length) {
+							var w = parser.parseWord(context.DEFINE[k],context,true);
+							var args = w.args.slice(), pre_args = [], post_args = [];
+							var quots = [];
+							while(args.length) {
+								var a = args.pop();
+								if(typeof a =="string") {
+									a = a.substr(0,9) == "function:" ? a.substr(9) : a;
+									quots.unshift(a);
+								} else {
+									pre_args.unshift(a);
+								}
+							}
+							function f(args2stack,quots,pre_args){
+								var str = "function(__s,__c) {\n";
+								str += pre_args.length ? "\t__s = __s.concat("+JSON.stringify(pre_args)+");\n" : "";
+								//str += args2stack ? "\t__s = __s.concat(__a.splice(0,"+args2stack+"));\n" : "";
+								quots.forEach(function(q){
+									//q = q.substr(0,9)=="function:" ? q.substr(9) : q;
+									str += "\t__s = "+q+"(__s,__c);\n";
+								});
+								str += "\treturn __s;\n";
+								str += "};\n";
+								return str;
+							};
+							context.resolvedWords[k] = k;
+							str += "var "+k+" = "+f(w.args2stack,quots,pre_args);
+							str += k==context.exec ? "return "+k+";\n" : "";
+						}
+					}
+					str += "});";
+					if(callback) callback(str);
+				});
 			});
 		},
 		load:function(file,callback,preserveData){
@@ -698,7 +780,42 @@ define([
 		},
 		onWord:function(w){
 		},
-		execute:function(file,callback,direct,args,seed){
+		createContext:function(file,seed) {
+			seed = seed || {};
+			var d = new Deferred();
+			var context = lang.mixin({
+				DEFINE:{},
+				modules:{},
+				resolvedWords:{},
+				data:{},
+				blocks:{},
+				vars:{},
+				stack:[],
+				document:document,
+				window:window
+			},seed);
+			request.get(file).then(function(result){
+				context = parser.parse(context,result,file);
+				context = parser.use(context,function(context){
+					context = parser.words(context);
+					if(context.resolvedWords[context.exec]) {
+						context.stack = context.resolvedWords[context.exec]([],context,context.exec);
+					}
+					d.resolve(context);
+				},function(err){
+					d.reject(err);
+				});
+			});
+			return d;
+		},
+		executeOnContext:function(context,result){
+			var exec = context.DEFINE[context.exec];
+			context = parser.parse(context,result,exec.path);
+			context = parser.words(context);
+			context.stack = context.resolvedWords[context.exec](context.stack,context,context.exec);
+			console.log(context.stack)
+		},
+		execute:function(file,callback,direct,seed){
 			seed = seed || {};
 			var context = lang.mixin({
 				DEFINE:{},
@@ -706,7 +823,10 @@ define([
 				resolvedWords:{},
 				data:{},
 				blocks:{},
-				stack:[]
+				vars:{},
+				stack:[],
+				document:document,
+				window:window
 			},seed);
 			var d = new Deferred();
 			if(direct) {
@@ -720,22 +840,17 @@ define([
 					context = parser.words(context);
 					if(context.breakonwords) {
 						console.log(context.exec);
-						stack = context.resolvedWords[context.exec]([],args || [],context,context.exec);
+						stack = context.resolvedWords[context.exec](context.stack,context,context.exec);
 					} else if(context.resolvedWords[context.exec]) {
-						stack = context.resolvedWords[context.exec]([],args || [],context,context.exec);
-					} else if(context.DEFINE[context.exec].args.length) {
-						stack = context.DEFINE[context.exec].args[0];
-					} else {
-						stack = [];
+						stack = context.resolvedWords[context.exec](context.stack,context,context.exec);
 					}
-					context.stack = stack;
 					if(callback) callback(context);
 				});
+			},function(err){
+				alert(err);
 			});
 		}
 	}
-	
-	acuna.kernel.parser = parser;
 	
 	return parser;
 	

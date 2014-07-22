@@ -1,0 +1,217 @@
+define
+	"document setup"
+
+use "acuna/kernel/extended"
+use "dojo/dom-attr" "dattr"
+use "dojo/keys" "dkeys"
+use "dojo/on" "don"
+use "dojo/when" "dwhen"
+use "dojo/topic" "dtopic"
+use "dojo/dom-construct" "dconstruct"
+use "acuna/markup/html" "html"
+use "acuna/parser" "parser"
+
+0 "qdepth" set_var
+"" "quot" set_var
+setup
+
+
+define "setup"
+	"setup suff"
+
+html
+	head
+		title "dahex.com"
+		style "@keyframes typing {from { width: 100% } to { width:0 }} @-webkit-keyframes typing {from { width: 100% } to { width:0 }} @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: black }} @-webkit-keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: black }} .echo { font-family: Consolas, monospace;position:relative;float:left;clear:left;margin-bottom:10px;} .echo span {position:absolute;top:0;right:0;width:0;background:#99b3cc;margin-right:-2px;border-left:1px solid transparent;animation:typing 1s steps(30,end), blink-caret 1s step-end 3;-webkit-animation:typing 1s steps(30,end), blink-caret 1s step-end 3;}string { color: red; }.number { color: darkorange; }.boolean { color: darkblue; }.null { color: magenta; }.key { color: #000; font-weight:bold; }.function { color: green; }.DOMNode { color:blue; }"
+	body
+		@style "background:#99b3cc;margin:0;padding:0;"
+		div
+			@style "position:absolute;z-index:2;display:-webkit-flex;display:flex;width:100%;height:100%;"
+			div
+				@id "echo"
+				@style "margin:20px;-webkit-flex:3;flex:3"
+			div
+				@id "stack"
+				@style "margin:20px;-webkit-flex:1;flex:1;background:#fff;overflow:auto;"
+"una/dahex.una" createContext
+
+
+define "createContext"
+	"create a new context for direct processing"
+
+1 false call_global
+	parser.createContext
+then
+	"context1" set_var
+	cli "Hallo" echo
+	
+	"error" echo
+
+
+define "cli"
+	"command line interface"
+
+"echo" "input" "last" create
+	id "cli"
+	type "text"
+	autocomplete "on"
+	style "display:block;clear:left;width:100%;"
+dup 0 false "focus" call
+"keydown" on
+	dup "shiftKey" get swap dup "ctrlKey" get swap "keyCode" get
+	noop
+		dkeys.ENTER
+	eq if
+		if
+			pop "qdepth" get_var 1 + dup "qdepth" set_var
+			"\t" swap repeat_str "cli" "value" get_attr "\n" + swap + "quot" get_var swap + "quot" set_var quot_out2
+			"cli" "value" "" set_attr
+
+			if
+				"qdepth" get_var dup neqz if_true
+					1 - dup "qdepth" set_var
+					"\t" swap repeat_str "cli" "value" get_attr "\n" + swap + "quot" get_var swap + "quot" set_var quot_out2
+					"cli" "value" "" set_attr
+			
+				cli_exec
+
+		pop pop
+
+
+define "cli_exec"
+	"send all text to the parser"
+
+"cli" "value" get_attr
+"qdepth" get_var dup 0 swap gt if
+	"\t" swap repeat_str swap "\n" + swap + "quot" get_var swap + "quot" set_var quot_out2
+	"cli" "value" "" set_attr
+	
+	pop "quot" get_var dup "" ne if_true
+		"quot" "innerHTML" "" set_attr
+	swap +
+	"" "quot" set_var
+	dup "" eq if
+		pop
+	
+		toLowerCase "[^\S\n\t]+" "g" regexp " " replace "^\s+|\s+$" "g" regexp "" replace exec
+
+
+define "quot_out"
+	"output quotation"
+
+"[^\S\n]+" "g" regexp "" replace
+"quot" by_id is_null if_true
+	"cli" "div" "before" create
+		id "quot"
+		style "background:#fff;clear:both;"
+	pop
+"quot" "innerHTML" ">" "quot" get_var test "qdepth" get_var repeat_str + dig4 + set_attr
+
+
+define "quot_out2"
+	"output quotation"
+
+"quot" by_id is_null if_true
+	"cli" "div" "before" create
+		id "quot"
+		style "background:#fff;clear:both;white-space:pre;"
+	pop
+"quot" "innerHTML" "quot" get_var "(\n)(\t*)([^\n]*)$" "g" regexp "$1$2â—�$3" replace set_attr
+
+
+define "by_id"
+	"getElementById interface"
+
+doc 1 false "getElementById" call
+
+
+define "toLowerCase"
+	"string to lower case"
+
+0 false "toLowerCase" call
+
+
+define "replace"
+	"replace string"
+
+dig 2 false "replace" call
+
+
+define "regexp"
+	"create RegExp object"
+
+win "RegExp" get new 2 false win "RegExp" get call
+
+
+define "exec"
+	"execute the code on the command line"
+
+"define\n\t\"\"\n\n" get2 + "context1" get_var swap 2 false call_global
+	parser.executeOnContext
+"cli" "value" "" set_attr
+"/event/exec" swap publish
+
+
+define "get_attr"
+	"get attr from dom element"
+
+2 false call_global
+	dattr.get
+
+
+define "set_attr"
+	"set attr to dom element"
+	"remove element at last line"
+
+3 false call_global
+	dattr.set
+pop
+
+
+define "then"
+	"handle Promises"
+
+swap 3 true call_global
+	dwhen
+
+
+define "on"
+	"connect dom events"
+
+3 true call_global
+	don
+pop
+
+
+define "echo"
+	"present text"
+
+"<span>&nbsp;</span>" + dip
+	"cli" "div" "before" create
+		class "echo"
+"innerHTML" swap 3 false call_global
+	dattr.set
+
+
+define "create"
+	"create element"
+
+dig4 dig 4 false call_global
+	dconstruct.create
+
+
+define "publish"
+	"publish to channel"
+
+2 false call_global
+	dtopic.publish
+
+
+define "repeat_str"
+	"repeat a string"
+
+nil bury dip
+	papply
+		cons
+swap repeat
+"" swap 1 false "join" call

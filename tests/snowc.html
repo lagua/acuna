@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"></meta>
+		<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+		<script>
+		require(["acuna/layer"],function(){
+			require([
+				"acuna/sneeuw"
+			], function(sneeuw){
+				sneeuw([],{
+					DEFINE:{},
+					modules:{},
+					resolvedWords:{},
+					data:{},
+					blocks:{},
+					vars:{},
+					stack:[],
+					document:document,
+					window:window
+				});
+			});
+		});
+		</script>
+	</head>
+	<body style="background: #99b3cc; margin: 0; padding: 0;">
+		<canvas id="canvas" style="position: absolute; height: 100%; width: 100%;" width="1920" height="942"></canvas>
+	</body>
+</html>

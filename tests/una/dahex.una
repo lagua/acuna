@@ -1,0 +1,873 @@
+define
+	"context for dahex tutorial"
+
+use "acuna/kernel/extended"
+use "dojo/dom-attr" "dattr"
+use "dojo/dom-construct" "dconstruct"
+use "dojo/dom-style" "dstyle"
+use "dojo/_base/fx" "dfx"
+use "dojo/fx/easing" "deasing"
+use "dojo/on" "don"
+use "dojo/topic" "dtopic"
+
+"/event/exec" subscribe
+	test_words
+pop
+
+
+define "test_words"
+	"check if undefined words on stack or else print it"
+
+nil current_stack for_each
+	is_object if_true
+		dup get_keys for_each
+			dup bury dup get is_undef swap bury4 if
+				cons
+				
+				pop
+			swap
+dup count 0 swap gt if_true
+	", " join "De volgende woorden ken ik niet: " swap + echo
+	clear_stack
+print_stack
+
+
+define "gebruiker"
+	"tutorial gebruiker"
+
+"Ah jij bent het, dat komt goed uit! Ik heb namelijk een nogal technische vraag..." echo 2222 wait
+	"Rechts zie je een lijst staan. Daar komt van alles in te staan dat ik (tijdelijk) gebruik..." echo 2222 wait
+		"Wat er het eerst inkomt, gaat er ook het eerste uit..." echo 2222 wait
+			"Kijk, ik zet er nu zelf het getal 1 in..." echo 2222 wait
+				current_context "stack" get 0 1 set print_stack 1111 wait
+					"Maar ik weet zelf niet hoe ik daar 2 van moet maken. Kun je me helpen? Type <b>begin</b> om verder te gaan!" echo 1 "step" set_var
+
+
+define "begin"
+	"het begin..."
+	"'set_var' zet een waarde van de stack weg in een variabele die later kan worden uitgevraagd"
+	"'has_var' kijkt of de variabele bestaat"
+	"'get_var' haalt de variabele op"
+	"'eq', 'lt', 'gt', etc. vergelijken twee waardes en zetten een boolean op de stack"
+	"'and' en 'or' verenigen 2 booleans"
+	"'if' voert bij true op stack de eerste quotation uit, bij false de tweede"
+	"als de stap 1 is (introducties zijn gemaakt) ga dan verder, vraag anders om introductie"
+
+"step" has_var
+"step" get_var 1 eq and if
+	"Ik denk dat je het getal eerst moet <b>verdubbel</b>en. Kun je raden hoe?" echo 2 "step" set_var
+	
+	"Zou je jezelf niet eerst introduceren? Laten we bij het begin beginnen..." echo
+
+
+define "verdubbel"
+	"verdubbel, een alias van 'dup' (kernel)"
+	"'dup' is een van de meest gebruikte stack manipulatie woorden"
+	"'dup' doet niets meer dan een kopie van de topwaarde op de stack zetten"
+	"'if_true' laat hier de hint alleen zien als men in de tutorial is"
+
+"step" has_var
+"step" get_var 2 eq and if_true
+	"Ja, dat ziet er al gezelliger uit. Nu alleen nog <b>optellen</b> denk ik..." echo 3 "step" set_var
+dup
+
+
+define "optellen"
+	"optellen, een alias van '+' (kernel/math)"
+	"'wait' voert een quotation uit met een timeout van de waarde op de stack"
+	"timeouts en andere asynchrone woorden zorgen ervoor dat men met een afgeleide stack te maken krijgt"
+	"woorden als '+', '-', '*', '/' voeren de native Math operators uit"
+
+"step" has_var
+"step" get_var 3 eq and if_true
+	"Het is je gelukt! Gefeliciteerd! Je hebt een prijs gewonnen..." echo 2222 wait
+		"Het is misschien geen witte kerst geweest, maar wil je soms dat het gaat <b>sneeuw</b>en?" echo 4 "step" set_var
++
+
+
+define "wouter"
+	"de maker"
+
+"Wouter is mijn maker en daarvoor ben ik dankbaar... maar soms denk ik dat hij gewoon niets beters te doen had..." echo 2222 wait
+	"Laat hem maar eens weten wat je van mij vindt. Dat zou hij leuk vinden" echo
+
+
+define "print_stack"
+	"print the stack"
+
+"stack" by_id "" "innerHTML" set_attr
+current_stack pretty_print for_each
+	"stack" by_id "div" "first" create
+		style "border-bottom:1px solid #ddd;white-space:nowrap;"
+	swap "innerHTML" set_attr
+
+
+define "hallo"
+	"iemand zegt hallo"
+	"zet een string op de stack en 'echo' deze"
+
+"Ik ben Da Hex, een computerprogramma. Hoe heet jij?" echo
+
+
+define "words"
+	"lijst geladen woorden"
+
+current_context "resolvedWords" get get_keys ", " join echo
+
+
+define "muziek"
+	"speel random muziek af"
+	"stop de muziek en verwijder als deze al bestaat"
+	"'is_null' zet true op de stack als de stackwaarde null is (er is geen element 'muziek')"
+	"'destroy' vernietigt een DOM element"
+	"'body' zet document.body op de stack"
+	"'playlist' is pure data: een tabel met mp3's en titels"
+	"'get_at' zet een item uit een onderliggend array op de stack met de topwaarde als index"
+
+"muziek" by_id dup is_null if
+	pop
+	
+	dup 0 false "pause" call
+	destroy
+body "audio" "last" create
+	id "muziek" 
+	autoplay "autoplay"
+playlist random 6 * floor get_at
+dup bury 0 get_at "src" set_attr pop
+1 get_at echo 2222 wait
+	"step" has_var
+	"step" get_var 5 eq and if_true
+		"En nu zijn alle problemen opgelost! Type nogmaals <b>muziek</b> voor andere track. Type <b>woorden</b> om te zien welke taal ik spreek. Tot ziens!" echo "step" unset_var
+
+
+define "pauzeer_muziek"
+	"zet muziek op pauze"
+
+"muziek" by_id dup is_null if
+	pop
+	
+	0 false "pause" call
+
+
+define "speel_muziek"
+	"hervat muziek"
+
+"muziek" by_id dup is_null if
+	pop
+	
+	0 false "play" call
+
+
+define "playlist"
+	"stuk voor stuk keizers"
+
+"media/abbado.mp3" "Ludwig van Beethoven - [Maurizio Pollini | Claudio Abbado | 2008] - Piano Concerto no. 5 'Emperor' - II. Adagio un poco mosso"
+"media/brendel.mp3" "Ludwig van Beethoven - [Alfred Brendel | Sir Simon Rattle | 1998] - Piano Concerto no. 5 'Emperor' - II. Adagio un poco mosso"
+"media/fischer.mp3"	"Ludwig van Beethoven - [Edwin Fischer | Wilhelm Furtwängler | 1951] - Piano Concerto no. 5 'Emperor' - II. Adagio un poco mosso"
+"media/arrau.mp3" "Ludwig van Beethoven - [Claudio Arrau | Sir Colin Davis | 1984] - Piano Concerto no. 5 'Emperor' - II. Adagio un poco mosso"
+"media/serkin.mp3" "Ludwig van Beethoven - [Rudolf Serkin | Leonard Bernstein | 1962] - Piano Concerto no. 5 'Emperor' - II. Adagio un poco mosso"
+"media/gould.mp3" "Ludwig van Beethoven - [Glenn Gould | Leopold Stokowski | 1966] - Piano Concerto no. 5 'Emperor' - II. Adagio un poco mosso"
+
+
+define "sneeuw"
+	"laat het sneeuwen"
+	"'by_id' zet een HTML DOM element op de stack (een brug naar getElementById)"
+	"geef het functionele canvas de juiste afmetingen"
+	"'get' zet een de waarde van een object-eigenschap op de stack"
+	"'swap' is een van de meestgebruikte stack shuffling woorden"
+	"'swap' verruilt de huidige waarde op de stack met de voorgaande"
+	"'nil' zet een leeg (dynamisch) array op de stack"
+	"de 'for' loop voert een quotation het aantal keer van de stackwaarde uit"
+	"'clone' kopieërt een object"
+	"'get2', 'get3', 'get4' en 'get5' dupliceren dieper liggende stackwaardes naar de top"
+	"'random' voert de native Math.random() functie uit"
+	"'set' update de waarde van een object-eigenschap"
+	"'cons' verplaatst een stackwaarde naar het onderliggende array"
+	"'bury' begraaft de topwaarde onder de onderliggende stackwaarde"
+	"'interval' begint een native setInterval() intervalsherhaling met de gegeven quotation"
+
+"flakes" has_var false eq if_true
+	50 "flakes" set_var 
+"step" has_var
+"step" get_var 4 eq and if_true
+	"Kijk, is dat niet fijn? Wat dacht je van een mooi <b>muziek</b>je erbij? Zet je geluid maar aan (werkt niet op mobiel)" echo 5 "step" set_var
+"canvas" by_id is_null if_true
+	body "canvas" "first" create
+		id "canvas"
+		style "position:absolute;height:100%;width:100%;"
+	dup "offsetWidth" get "width" swap set swap
+	dup "offsetHeight" get "height" swap set swap pop
+	nil "flakes" get_var for
+		pop new_object
+		get4 random * "x" swap set pop
+		get3 random * "y" swap set pop
+		5 random * "r" swap set pop
+		"flakes" get_var random * "d" swap set pop
+		cons
+	bury pop pop
+	teken_sneeuw
+	0 33 interval
+		update_sneeuw
+
+
+define "update_sneeuw"
+	"update de sneeuw"
+	"'for_each' (kernel/array) voert een quotation uit voor elk item in een array (plus gehele stack op dat moment)"
+	"'dig', 'dig4' en 'dig5' halen dieperliggende stackwaardes naar de top"
+	"'neg' keert posi-/negatief van getal om"
+
+0.01 + swap dup for_each
+	dup "d" get get4 + cos 1 + get2 "r" get 2 / + get2 "y" get + "y" swap set
+	dip
+		dup "x" get get4 sin 2 * + "x" swap set
+	"canvas" by_id dup "width" get swap "height" get
+	get2 5 + get5 gt
+	dig5 5 neg swap lt or
+	get2 dig5 gt or
+	if_true
+		pop random * "x" swap set pop "y" -10 set pop
+teken_sneeuw
+swap
+
+
+define "teken_sneeuw"
+	"teken de sneeuw"
+	"'ctx' zet de canvas.getContext('2d') op de stack"
+	"'call' voert een method op een native object uit, waarbij:"
+	"object: het object waarop de method wordt toegepast"
+	"integer: het aantal parameters is dat de functie van stack gebruikt"
+	"boolean: indien er functies worden meegestuurd, laat deze hun resultaat op de stack zetten"
+	"string: de naam van de functie"
+	"dit woord is gebruikt het native canvas object om de sneeuw te tekenen"
+
+0 0 "canvas" by_id dup "width" get swap "height" get ctx 4 false "clearRect" call
+ctx "fillStyle" "rgba(255, 255, 255, 0.8)" set pop
+0 false "beginPath" call
+dup for_each
+	dup "x" get get2 "y" get
+	ctx 2 false "moveTo" call
+	dup "x" get get2 "y" get dig "r" get 0 PI 2 * true 
+	ctx 6 false "arc" call
+ctx 0 false "fill" call
+
+
+define "ctx"
+	"get canvas object"
+
+"2d" "canvas" by_id 1 false "getContext" call
+
+
+define "woorden"
+	"overzicht woorden tutorial"
+
+current_context "blocks" get woordenlijst map
+	dup dig swap get "\"" "g" regexp "”" replace "'" "g" regexp "’" replace "<" "g" regexp "&lt;" replace ">" "g" regexp "&gt;" replace "&" "g" regexp "&amp;" replace "\n" "g" regexp "<br>" replace "\t" "g" regexp "&nbsp;&nbsp;&nbsp;&nbsp;" replace "<a href=\"javascript:w=window.open();w.document.write('" swap + "');w.document.close();\">" dig + "</a>" + +
+", " join echo pop 2222 wait
+	"Woorden zijn magisch. Klik op een woord en ik zal mijn geheimen aan je openbaren..." echo 2222 wait
+		"Ik ben geïnspireerd op talen als <a href='http://c2.com/cgi/wiki?JoyLanguage' target='blank'>Joy</a> en <a href='http://cat-language.com' target='blank'>Cat</a>..." echo 2222 wait
+			"Ik houd erg van inspringen en witruimte, en kan het goed vinden met JavaScript..." echo 2222 wait
+				"Woorden die ik niet ken zijn ook welkom bij mij, als sleutels tot data..." echo 2222 wait
+					"Helaas kun je zelf op dit moment nog geen nieuwe woorden definiëren, maar dat komt hopelijk binnenkort..." echo 2222 wait
+						"Type <b>words</b> voor een lijst van alle woorden die ik op dit moment gebruik" echo
+
+
+define "woordenlijst"
+	"lijst overzicht tutorial"
+
+"hallo"
+"echo"
+"create"
+"begin"
+"verdubbel"
+"optellen"
+"sneeuw"
+"teken_sneeuw"
+"update_sneeuw"
+"muziek"
+"playlist"
+"pauzeer_muziek"
+"speel_muziek"
+
+
+define "connect4"
+	"a simple connect4 game"
+
+1 "player" set_var
+-9999999 "alpha" set_var
+9999999 "beta" set_var
+body "div" "last" create
+	id "board"
+	style "background: url(images/bord.png) no-repeat scroll 2px 0 rgba(0, 0, 0, 0);height:520px;padding:25px;width:540px;margin:100px;position:absolute;z-index:9 "
+nil 7 for
+	dig dup bury4 "div" "last" create
+		style "background-position:center 0;background-repeat:no-repeat;display:inline-block;height: 500px;margin:-80px 0 0;padding: 0; width: 70px;"
+	swap "col" swap + "id" set_attr cons
+swap pop for_each
+	dup "mouseenter" on
+		"currentTarget" get "backgroundImage" "url(images/munt-" "player" get_var 1 eq if
+			"rood"
+			
+			"geel"
+		+ ".png)" + set_style
+	dup "mouseleave" on
+		"currentTarget" get "backgroundImage" "none" set_style
+	"click" on
+		"currentTarget" get dup "backgroundImage" "none" set_style
+		"id" get_attr "col" "" replace win 1 false "parseInt" call insert
+
+
+define "insert"
+	"insert player at column"
+	"leave correct number on stack for each run of either set/get"
+
+dup 5 swap pair get_board_at
+0 ne if
+	pop
+
+	dup get_pos
+	dup dip
+		swap pair "player" get_var set_board_at
+	swap "col" swap + "div" "last" create
+		style "position:absolute"
+	"innerHTML" "<img src=\"images/munt-" "player" get_var 1 eq if
+		"rood"
+		
+		"geel"
+	+ ".png\">" + set pop
+	drop_coin
+	checkfinished if_true
+		1 eq if
+			"rood heeft gewonnen!"
+			
+			"geel heeft gewonnen!"
+		win 1 false "alert" call
+	"player" get_var 1 eq if_true
+		2 "player" set_var ai_move
+
+
+define "drop_coin"
+	"drop coin animation"
+	"0: div, 1: row"
+
+noop
+	node
+	properties
+	easing
+	duration 800
+"node" dig set pop
+"easing" noop
+	deasing.bounceOut
+set pop
+noop
+	start 0
+	end 0
+	unit "px"
+"end" dig4 6 swap - 70 * 10 + set pop noop
+	marginTop
+swap "marginTop" swap set pop "properties" swap set pop animate_property 0 false "play" call pop
+
+
+define "ai_move"
+	""
+
+0 "depth" set_var
+alphabeta max_value test pop 2 "ai_col" get_var test insert
+1 "player" set_var
+
+
+define "t"
+	""
+
+0 "depth" set_var
+alphabeta max_value
+
+
+define "max_value"
+	"get max value"
+
+clone
+checkfinished if
+	subr
+	 
+	"depth" get_var dup 1 eq is_tie or if
+		pop evaluate "alpha" swap "eval alpha" test pop set
+		
+		1 + "depth" set_var
+		7 for
+			get_pos dup 6 swap gte if
+				pop pop
+				
+				swap pair dup clone dip
+					2 set_board_at
+				dip
+					"max" test pop dup dup dup min_value dup bury swap "alpha" get dup bury swap gt dup dip
+						if
+							pop "alpha" swap "set alpha" test pop set
+						
+							popd
+				dup clone 1 get_at swap 0 set_board_at
+				bury4 bury4 dup bury swap "beta" get swap gte if
+					bury pop pop leave
+				
+					bury swap if_true
+						dup "ai_col" set_var
+					6 swap lt if_true
+						pop
+popd
+
+
+define "min_value"
+	"get min value"
+
+clone
+checkfinished if
+	subr
+		
+	"depth" get_var dup 1 eq is_tie or if
+		pop evaluate "beta" swap "eval beta" test pop set
+		
+		1 + "depth" set_var
+		7 for
+			get_pos dup 6 swap gte if
+				pop pop
+				
+				swap pair dup clone dip
+					2 set_board_at
+				dip
+					"min" test pop dup dup dup max_value dup bury swap "beta" get dup bury swap lt if
+						pop "beta" swap set
+					
+						popd
+				dup clone 1 get_at swap 0 set_board_at
+				bury dup bury swap "alpha" get swap lte if
+					swap pop leave
+				
+					swap 6 swap lt if_true
+						pop
+popd
+
+
+define "subr"
+	""
+
+1 eq if
+	0 "depth" get_var +
+	
+	255 "depth" get_var -
+
+
+define "alphabeta"
+
+alpha -99999999999999999999
+beta 99999999999999999999
+
+
+define "get_pos"
+
+6 for
+	dup get3 pair get_board_at
+	0 eq
+	if
+		leave
+
+		pop
+
+
+define "is_tie"
+	""
+
+6 for
+	7 for
+		get2 swap pair get_board_at
+		0 eq if_true
+			false leave
+	false eq if_true
+		pop false leave
+false eq if
+	false noop
+
+	true noop
+
+
+define "evaluate"
+	"evaluate the board status"
+
+128 6 for
+	7 for
+		get2 dip
+			pair dup clone
+			get_evalt_at dip
+				get_board_at 1 eq
+			swap if
+				-
+	
+				+
+	pop
+
+
+define "get_evalt_at"
+	"get value at pos"
+	"0: pair"
+
+evaluation_table swap unpair get_at2 swap pop
+
+
+define "get_evalt_at"
+	"set value at pos"
+	"0: value, 1: pair"
+
+evaluation_table bury dip
+	unpair
+set_at2 pop
+
+
+define "evaluation_table"
+	"this will be used to evaluate the state of the board"
+
+3 4 5 7 5 4 3
+4 6 8 10 8 6 4
+5 8 11 13 11 8 5
+5 8 11 13 11 8 5
+4 6 8 10 8 6 4
+3 4 5 7 5 4 3
+
+
+define "checkfinished"
+	"check if there is a winner"
+	"note: true strict equality"
+
+false false false false check_horizontal true ne if
+	check_vertical
+
+	popd popd popd popd true
+true ne if
+	check_diagonal1
+	
+	popd popd popd true
+true ne if
+	check_diagonal2
+	
+	popd popd true
+true ne if
+	false noop
+	
+	popd true
+
+
+define "check_horizontal"
+	"check for win horizontally"
+
+6 for
+	4 for
+		pair dup_list get_board_at
+		dup dip
+			0 ne swap
+		swap dup_list dig dup dip
+			1 checklast dig and swap
+		swap dup_list dig dup dip
+			2 checklast dig and swap
+		swap dup_list dig dup dip
+			3 checklast dig and swap
+		dig if
+			swap pop true leave
+
+			pop unpair pop
+	if_true
+		true leave
+
+
+define "checklast"
+	"increment 2nd iterator"
+
+dip
+	dip
+		unpair
+swap dip
+	+ pair get_board_at
+eq
+
+
+define "check_vertical"
+	"check for win vertically"
+
+3 for
+	7 for
+		pair dup_list get_board_at
+		dup dip
+			0 ne swap
+		swap dup_list dig dup dip
+			1 checkfirst dig and swap
+		swap dup_list dig dup dip
+			2 checkfirst dig and swap
+		swap dup_list dig dup dip
+			3 checkfirst dig and swap
+		dig if
+			swap pop true leave
+
+			pop unpair pop
+	if_true
+		true leave
+
+
+define "checkfirst"
+	"increment 1st iterator"
+
+dip
+	dip
+		unpair swap
+swap dip
+	+ swap pair get_board_at
+eq
+
+
+define "check_diagonal1"
+	"check for win diagonally (upper left to lower right)"
+
+3 for
+	4 for
+		pair dup_list get_board_at
+		dup dip
+			0 ne swap
+		swap dup_list dig dup dip
+			1 checkboth dig and swap
+		swap dup_list dig dup dip
+			2 checkboth dig and swap
+		swap dup_list dig dup dip
+			3 checkboth dig and swap
+		dig if
+			swap pop true leave
+
+			pop unpair pop
+	if_true
+		true leave
+
+
+define "checkboth"
+	"increment both iterators"
+
+dip
+	dip
+		unpair
+swap dip
+	dup dip
+		+ swap
+	+ swap pair get_board_at
+eq
+
+
+define "check_diagonal2"
+	"check for win diagonally (upper left to lower right)"
+
+3 for
+	3 +
+	4 for
+		pair dup_list get_board_at
+		dup dip
+			0 ne swap
+		swap dup_list dig dup dip
+			1 checkbothr dig and swap
+		swap dup_list dig dup dip
+			2 checkbothr dig and swap
+		swap dup_list dig dup dip
+			3 checkbothr dig and swap
+		dig if
+			swap pop true leave
+
+			pop unpair pop
+	if_true
+		true leave
+
+
+define "checkbothr"
+	"decrement 1st, increment 2nd iterator"
+
+dip
+	dip
+		unpair
+swap dip
+	dup dip
+		+ swap
+	- swap pair get_board_at
+eq
+
+
+define "get_board_at"
+	"get value at pos"
+	"0: pair"
+
+board swap unpair get_at2 swap pop
+
+
+define "set_board_at"
+	"set value at pos"
+	"0: value, 1: pair"
+
+board bury dip
+	unpair
+set_at2 pop
+
+
+define "board"
+	"set up the board"
+
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+
+
+define "replace"
+	"replace string"
+
+dig 2 false "replace" call
+
+
+define "regexp"
+	"create RegExp object"
+
+win "RegExp" get new 2 false win "RegExp" get call
+
+
+define "body"
+	"get body element"
+
+doc "body" get
+
+
+define "echo"
+	"presenteer tekst aan de gebruiker"
+	"voeg een lege span toe (voor later gebruik), 'dip' haalt de tekst tijdelijk van de stack en begint een 'quotation'"
+	"quotations worden ingesprongen, en pas uitgevoerd wanneer het laatste woord op de vorige regel is bereikt"
+	"'create' een nieuw HTML element van class echo, plaats voor de commandline (#cli)"
+	"'set_attr' set het attribute innerHTML van het element naar de tekst, die weer beschikbaar is na de 'dip'"
+	"verwijder wat 'set_attr' teruggeeft van de stack met 'pop'"
+
+"<span>&nbsp;</span>" + dip
+	"cli" "div" "before" create
+		class "echo"
+"innerHTML" set_attr
+pop
+
+
+define "by_id"
+	"element.byId"
+
+doc 1 false "getElementById" call
+
+
+define "interval"
+
+swap 2 false "setInterval" call_global pop
+
+
+define "wait"
+
+swap 2 false "setTimeout" call_global pop
+
+
+define "join"
+	"join array"
+
+swap 1 false "join" call
+
+
+define "get_attr"
+	"get DOM attribute"
+
+2 false call_global
+	dattr.get
+
+
+define "set_attr"
+	"set DOM attribute"
+
+swap 3 false call_global
+	dattr.set
+
+
+define "create"
+	"maak DOM element"
+	"'dig' en 'dig4' (stack shuffle woorden) zetten de parameters op de juiste volgorde"
+	"de volgorde voor de functie moet zijn: naam, eigenschappen, doel, positie tov doel"
+	"maar de waarden op de stack staan niet op de goede plaats, dus die wordt een beetje geshuffled"
+	"het woord 'call_global' maakt vervolgens een brug met JavaScript, waarbij:"
+	"integer: het aantal parameters is dat de functie van stack gebruikt"
+	"boolean: indien er functies worden meegestuurd, laat deze hun resultaat op de stack zetten"
+	"dconstruct is een dojo library import: http://dojotoolkit.org/reference-guide/1.9/dojo/dom-construct.html"
+	"'call_global' voert een functie altijd in de globale ruimte uit, in de browser dus het 'window' object"
+	"'dconstruct' is object, de method 'create' ervan wordt aangeroepen met de puntnotatatie"
+
+dig4 dig 4 false call_global
+	dconstruct.create
+
+
+define "destroy"
+	"destroy element"
+
+1 false call_global
+	dconstruct.destroy
+
+
+define "subscribe"
+	"subscribe to channel"
+
+2 false call_global
+	dtopic.subscribe
+
+
+define "on"
+	"connect dom events"
+
+3 true call_global
+	don
+pop
+
+
+define "set_style"
+	"set dom style"
+
+3 false call_global
+	dstyle.set
+pop
+
+
+define "animate_property"
+	"dojo fx interface"
+
+1 false call_global
+	dfx.animateProperty
+
+
+define "pair"
+	"creates an array of 2 items"
+
+nil bury dip
+	cons
+cons
+
+
+define "unpair"
+	"dissolve pair"
+
+uncons dip
+	head
+
+
+define "head"
+	"Replaces a list with the first item"
+
+uncons popd
+
+
+define "dup_list"
+	"shortcut for array dup+clone"
+
+dup clone
+
+
+define "new_object"
+	"create new generic object"
+
+win "Object" get new
